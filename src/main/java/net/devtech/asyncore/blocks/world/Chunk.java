@@ -22,6 +22,7 @@ public class Chunk {
 	private static final int CHUNK_SIZE = 16 * 256 * 16;
 	private static final Random CHUNK_RANDOM = new Random();
 	private final ShortSet tickables = new ShortOpenHashSet();
+	// TODO either pool this or replace with a short -> object map, this is pretty expensive
 	private final Object[] data = new Object[CHUNK_SIZE];
 	WorldRef world;
 	int objects;
@@ -88,9 +89,6 @@ public class Chunk {
 
 	/**
 	 * tick all the tickable blocks inside the chunk
-	 *
-	 * @param cx
-	 * @param cz
 	 */
 	public void tick(int cx, int cz) {
 		final int offx = cx * 16;
@@ -125,7 +123,6 @@ public class Chunk {
 
 	@Reader (9072059811478052715L)
 	protected final void reader(PersistentInput input) throws IOException {
-		System.out.println("bruh");
 		input.readArray(this.data);
 		this.objects = input.readInt();
 		this.world = (WorldRef) input.readPersistent();
@@ -137,7 +134,6 @@ public class Chunk {
 
 	@Writer (9072059811478052715L)
 	protected final void writer(PersistentOutput output) throws IOException {
-		System.out.println("saving!");
 		// save data
 		output.writeArrayNoLength(this.data);
 		// save objects

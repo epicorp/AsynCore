@@ -1,5 +1,6 @@
 package net.devtech.asyncore.blocks.world;
 
+import net.devtech.asyncore.AsynCoreConfig;
 import net.devtech.asyncore.util.ref.WorldRef;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -18,7 +19,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ServerManager implements Listener {
-	private final ExecutorService service = Executors.newFixedThreadPool(1); // can be increased if using SSD
+	private final ExecutorService service = Executors.newFixedThreadPool(AsynCoreConfig.threads);
 	private Map<WorldRef, WorldContainer> worlds = new ConcurrentHashMap<>();
 	private final File worldDir;
 	public ServerManager(File worldDir) {
