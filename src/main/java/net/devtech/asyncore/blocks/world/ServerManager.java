@@ -104,11 +104,6 @@ public class ServerManager implements Listener, ServerAccess {
 	}
 
 	@Override
-	public Object remove(World world, int x, int y, int z) {
-		return this.getAndPlace(world, x, y, z, null);
-	}
-
-	@Override
 	public boolean setIfVacant(World world, int x, int y, int z, Supplier<Object> objectSupplier) {
 		return this.worlds.get(new WorldRef(world)).setIfVacant(x, y, z, () -> {
 			Object get = objectSupplier.get();
@@ -116,6 +111,11 @@ public class ServerManager implements Listener, ServerAccess {
 				((Placeable) get).place(world, x, y, z);
 			return get;
 		});
+	}
+
+	@Override
+	public Object get(World world, int x, int y, int z) {
+		return this.worlds.get(new WorldRef(world)).get(x, y, z);
 	}
 
 }

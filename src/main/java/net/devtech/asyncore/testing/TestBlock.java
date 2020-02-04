@@ -12,18 +12,18 @@ public class TestBlock implements Tickable {
 	private int i;
 	@Override
 	public void tick(World world, int x, int y, int z) {
-		System.out.println(i++);
+		System.out.printf("I'm at %d %d %d in %s and my 'i' is %d\n", x, y, z, world, this.i);
 	}
 
 	@Reader(2341234556789L)
 	public final void read(PersistentInput input) throws IOException {
 		this.i = input.readInt();
-		System.out.println(i);
+		System.out.println(this.i);
 	}
 
 	@Writer(2341234556789L)
 	public final void write(PersistentOutput output) throws IOException {
-		System.out.println(i + "aaaa");
+		System.out.println(this.i + "aaaa");
 		output.writeInt(this.i);
 	}
 }

@@ -31,8 +31,6 @@ public final class AsynCore extends JavaPlugin implements Listener {
 		PERSISTENT_REGISTRY.register(TestBlock.class, new AnnotatedPersistent<>(TestBlock.class, 2341234556789L));
 	}
 
-
-
 	@Override
 	public void onEnable() {
 		instance = this;
