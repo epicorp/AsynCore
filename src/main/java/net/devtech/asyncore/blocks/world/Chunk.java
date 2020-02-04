@@ -125,15 +125,29 @@ public class Chunk {
 
 	@Reader (9072059811478052715L)
 	protected final void reader(PersistentInput input) throws IOException {
+		System.out.println("bruh");
 		input.readArray(this.data);
 		this.objects = input.readInt();
 		this.world = (WorldRef) input.readPersistent();
+		int i = input.readInt();
+		for (int i1 = 0; i1 < i; i1++) {
+			this.tickables.add(input.readShort());
+		}
 	}
 
 	@Writer (9072059811478052715L)
 	protected final void writer(PersistentOutput output) throws IOException {
-		output.writeArray(this.data);
+		System.out.println("saving!");
+		// save data
+		output.writeArrayNoLength(this.data);
+		// save objects
 		output.writeInt(this.objects);
+		// write world ref
 		output.writePersistent(this.world);
+		// write tickables
+		output.writeInt(this.tickables.size());
+		for (Short tickable : this.tickables) {
+			output.writeShort(tickable);
+		}
 	}
 }

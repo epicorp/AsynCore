@@ -11,6 +11,10 @@ public abstract class BukkitRef<T, I> {
 		this.internal = this.to(object);
 	}
 
+	public BukkitRef(I object, boolean conflictingParam /*so constructor sigs do not conflic*/) {
+		this.internal = object;
+	}
+
 	public T get() {
 		return this.from(this.internal);
 	}

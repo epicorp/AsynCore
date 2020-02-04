@@ -15,6 +15,10 @@ public class WorldRef extends BukkitRef<World, UUID> {
 		super(object);
 	}
 
+	public WorldRef(UUID object, boolean conflictingParam) {
+		super(object, conflictingParam);
+	}
+
 	@Override
 	protected World from(UUID internal) {
 		return Bukkit.getWorld(internal);
@@ -40,9 +44,7 @@ public class WorldRef extends BukkitRef<World, UUID> {
 
 		@Override
 		public WorldRef read(PersistentInput input) throws IOException {
-			WorldRef ref = new WorldRef(null);
-			ref.internal = input.readUUID();
-			return ref;
+			return new WorldRef(input.readUUID(), false);
 		}
 
 		@Override

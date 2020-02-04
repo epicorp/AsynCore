@@ -12,16 +12,18 @@ public class TestBlock implements Ticking {
 	private int i;
 	@Override
 	public void tick(World world, int x, int y, int z) {
-		world.getPlayers().forEach(p -> p.sendMessage(String.valueOf(i++)));
+		System.out.println(i++);
 	}
 
 	@Reader(2341234556789L)
 	public final void read(PersistentInput input) throws IOException {
 		this.i = input.readInt();
+		System.out.println(i);
 	}
 
 	@Writer(2341234556789L)
 	public final void write(PersistentOutput output) throws IOException {
+		System.out.println(i + "aaaa");
 		output.writeInt(this.i);
 	}
 }

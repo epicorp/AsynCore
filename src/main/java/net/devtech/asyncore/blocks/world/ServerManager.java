@@ -37,6 +37,7 @@ public class ServerManager implements Listener {
 		this.worlds.get(ref).set(x, y, z, object);
 	}
 
+	@Deprecated
 	public void set(Location location, Object object) {
 		this.set(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), object);
 	}
