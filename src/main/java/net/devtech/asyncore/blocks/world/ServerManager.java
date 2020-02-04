@@ -1,6 +1,6 @@
-package net.devtech.asyncore.core.server;
+package net.devtech.asyncore.blocks.world;
 
-import net.devtech.asyncore.core.world.WorldContainer;
+import net.devtech.asyncore.blocks.world.WorldContainer;
 import net.devtech.asyncore.util.ref.WorldRef;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;

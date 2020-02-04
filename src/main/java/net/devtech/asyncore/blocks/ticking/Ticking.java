@@ -1,4 +1,4 @@
-package net.devtech.asyncore.api.ticking;
+package net.devtech.asyncore.blocks.ticking;
 
 /**
  * a block that ticks

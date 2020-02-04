@@ -1,4 +1,4 @@
-package net.devtech.asyncore.core.world;
+package net.devtech.asyncore.blocks.world;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;

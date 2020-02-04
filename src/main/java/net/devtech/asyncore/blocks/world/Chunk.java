@@ -1,9 +1,9 @@
-package net.devtech.asyncore.core.world;
+package net.devtech.asyncore.blocks.world;
 
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
-import net.devtech.asyncore.api.ticking.RandomTicking;
-import net.devtech.asyncore.api.ticking.Ticking;
+import net.devtech.asyncore.blocks.ticking.RandomTicking;
+import net.devtech.asyncore.blocks.ticking.Ticking;
 import net.devtech.yajslib.annotations.Reader;
 import net.devtech.yajslib.annotations.Writer;
 import net.devtech.yajslib.io.PersistentInputStream;
