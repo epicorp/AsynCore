@@ -1,4 +1,4 @@
-package net.devtech.asyncore.threading;
+package net.devtech.asyncore.util.threading;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;

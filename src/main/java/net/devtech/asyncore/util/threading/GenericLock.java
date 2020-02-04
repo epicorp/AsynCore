@@ -1,4 +1,4 @@
-package net.devtech.asyncore.threading;
+package net.devtech.asyncore.util.threading;
 
 import net.devtech.utilib.functions.ThrowingRunnable;
 import java.util.Queue;

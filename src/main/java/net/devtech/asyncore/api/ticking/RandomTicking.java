@@ -1,14 +1,11 @@
 package net.devtech.asyncore.api.ticking;
 
-/**
- * a block that ticks
- */
-public interface Ticking {
+public interface RandomTicking {
 	/**
-	 * Tick the block, this is called on regular intervals
+	 * This is called randomly when the block is loaded
 	 * @param x the x coordinate of the object
 	 * @param y the y coordinate of the object
 	 * @param z the z coordinate of the object
 	 */
-	void tick(int x, int y, int z);
+	void randTick(int x, int y, int z);
 }

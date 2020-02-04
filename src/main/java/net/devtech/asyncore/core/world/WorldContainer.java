@@ -1,12 +1,12 @@
-package net.devtech.asyncore.world;
+package net.devtech.asyncore.core.world;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.devtech.asyncore.AsynCore;
-import net.devtech.asyncore.ref.WorldRef;
-import net.devtech.asyncore.threading.GenericLock;
-import net.devtech.asyncore.threading.PointLock;
+import net.devtech.asyncore.util.ref.WorldRef;
+import net.devtech.asyncore.util.threading.GenericLock;
+import net.devtech.asyncore.util.threading.PointLock;
 import net.devtech.yajslib.io.PersistentInputStream;
 import net.devtech.yajslib.io.PersistentOutputStream;
 import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
@@ -34,28 +34,35 @@ public class WorldContainer {
 	}
 
 	public void loadChunk(final int x, final int z) {
-		// TODO for when chunk have been loaded for the first time
 		this.chunkLock.waitFor(x, z, () -> {
 			File chunkFile = new File(this.worldDir, String.format(FILE_PATTERN, x, z));
-			try (PersistentInputStream input = new PersistentInputStream(new LZMACompressorInputStream(new FileInputStream(chunkFile)), AsynCore.PERSISTENT_REGISTRY)) {
-				Object chunk = input.readPersistent();
-				if (!(chunk instanceof Chunk)) throw new IOException(chunk + " ohno");
-				this.worldLock.wait(() -> this.chunks.put((long) x << 32 | z & 0xFFFFFFFFL, (Chunk) chunk));
-			} catch (IOException e) {
-				LOGGER.log(Level.SEVERE, "Chunk corruption in world: " + this.world.get().getName() + " at chunk " + x + ", " + z, e);
-				e.printStackTrace();
+			if(chunkFile.exists()) {
+				try (PersistentInputStream input = new PersistentInputStream(new LZMACompressorInputStream(new FileInputStream(chunkFile)), AsynCore.PERSISTENT_REGISTRY)) {
+					Object chunk = input.readPersistent();
+					if (!(chunk instanceof Chunk)) throw new IOException(chunk + " ohno");
+					this.worldLock.wait(() -> this.chunks.put((long) x << 32 | z & 0xFFFFFFFFL, (Chunk) chunk));
+				} catch (IOException e) {
+					LOGGER.log(Level.SEVERE, "Chunk corruption in world: " + this.world.get().getName() + " at chunk " + x + ", " + z, e);
+					e.printStackTrace();
+				}
+			} else { // new chunk
+				this.worldLock.wait(() -> this.chunks.put((long) x << 32 | z & 0xFFFFFFFFL, new Chunk()));
 			}
 		});
 	}
 
 	public void unloadChunk(final int x, final int z) {
-		// TODO delete files with empty data
 		this.chunkLock.waitFor(x, z, () -> {
 			File chunkFile = new File(this.worldDir, String.format(FILE_PATTERN, x, z));
 			try (PersistentOutputStream output = new PersistentOutputStream(new LZMACompressorOutputStream(new FileOutputStream(chunkFile)), AsynCore.PERSISTENT_REGISTRY)) {
-				Chunk chunk = this.chunks.get((long) x << 32 | z & 0xFFFFFFFFL);
-				chunk.isLoaded = false;
-				output.writePersistent(chunk); // this may need a world lock but I don't think it does
+				Chunk chunk = this.chunks.remove((long) x << 32 | z & 0xFFFFFFFFL);
+				chunk.isLoaded = false; // invalidate any old references
+				if(chunk.objects == 0)
+					if(!chunkFile.delete() && chunkFile.exists()) {
+						LOGGER.severe("Unable to delete chunk file " + chunkFile);
+					}
+				else
+					output.writePersistent(chunk); // this may need a world lock but I don't think it does
 			} catch (IOException e) {
 				LOGGER.log(Level.SEVERE, "Chunk write failure in world: " + this.world.get().getName() + " at chunk " + x + ", " + z, e);
 				e.printStackTrace();

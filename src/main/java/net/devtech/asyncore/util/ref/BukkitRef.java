@@ -1,4 +1,4 @@
-package net.devtech.asyncore.ref;
+package net.devtech.asyncore.util.ref;
 
 /**
  * for holding safe references to bukkit objects
@@ -24,12 +24,7 @@ public abstract class BukkitRef<T, I> {
 
 	@Override
 	public boolean equals(Object object) {
-		if (this == object) return true;
-		if (!(object instanceof BukkitRef)) return false;
-
-		BukkitRef<?, ?> ref = (BukkitRef<?, ?>) object;
-
-		return this.internal.equals(ref.internal);
+		return this == object || object instanceof BukkitRef && this.internal.equals(object);
 	}
 
 	@Override
@@ -39,6 +34,6 @@ public abstract class BukkitRef<T, I> {
 
 	@Override
 	public String toString() {
-		return String.format("BukkitRef: %s (%s)", this.from(this.internal), internal);
+		return String.format("BukkitRef: %s (%s)", this.from(this.internal), this.internal);
 	}
 }
