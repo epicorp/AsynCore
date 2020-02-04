@@ -2,8 +2,8 @@ package net.devtech.asyncore.blocks.world;
 
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
-import net.devtech.asyncore.blocks.ticking.RandomTicking;
-import net.devtech.asyncore.blocks.ticking.Ticking;
+import net.devtech.asyncore.blocks.core.RandTickable;
+import net.devtech.asyncore.blocks.core.Tickable;
 import net.devtech.asyncore.util.ref.WorldRef;
 import net.devtech.yajslib.annotations.Reader;
 import net.devtech.yajslib.annotations.Writer;
@@ -13,6 +13,7 @@ import org.bukkit.World;
 import java.io.IOException;
 import java.util.Random;
 import java.util.function.IntConsumer;
+import java.util.function.Supplier;
 
 /**
  * there's alot of code duplication here, mostly micro optimizations but eh
@@ -22,7 +23,7 @@ public class Chunk {
 	private static final int CHUNK_SIZE = 16 * 256 * 16;
 	private static final Random CHUNK_RANDOM = new Random();
 	private final ShortSet tickables = new ShortOpenHashSet();
-	// TODO either pool this or replace with a short -> object map, this is pretty expensive
+	// TODO replace with a short -> object map, this is pretty expensive
 	private final Object[] data = new Object[CHUNK_SIZE];
 	WorldRef world;
 	int objects;
@@ -53,7 +54,7 @@ public class Chunk {
 		T old = (T) this.data[index];
 		this.data[index] = _new;
 		this.objects++;
-		if (_new instanceof Ticking) this.tickables.add((short) index);
+		if (_new instanceof Tickable) this.tickables.add((short) index);
 		return old;
 	}
 
@@ -67,7 +68,7 @@ public class Chunk {
 		T old = (T) this.data[index];
 		this.data[index] = null;
 		this.objects--;
-		if (old instanceof Ticking) this.tickables.remove((short) index);
+		if (old instanceof Tickable) this.tickables.remove((short) index);
 		return old;
 	}
 
@@ -76,13 +77,13 @@ public class Chunk {
 	 *
 	 * @return true if the object was set
 	 */
-	public boolean setOrAbort(int x, int y, int z, Object object) {
+	public boolean setOrAbort(int x, int y, int z, Supplier<Object> object) {
 		int index = x & 15 | (z & 15) << 4 | y << 8; // index compaction
 		Object old = this.data[index];
 		if (old == null) {
-			this.data[index] = object;
+			Object temp = this.data[index] = object.get();
 			this.objects++;
-			if (object instanceof Ticking) this.tickables.add((short) index);
+			if (temp instanceof Tickable) this.tickables.add((short) index);
 			return true;
 		} else return false;
 	}
@@ -95,7 +96,7 @@ public class Chunk {
 		final int offz = cz * 16;
 		this.tickables.forEach((IntConsumer) pack -> {
 			int ux = pack & 15, uz = (pack >> 4) & 15, uy = ((pack & 0xffff) >> 8);
-			((Ticking) (this.data[pack])).tick(this.world.get(), offx + ux, uy, offz + uz);
+			((Tickable) (this.data[pack])).tick(this.world.get(), offx + ux, uy, offz + uz);
 		});
 	}
 
@@ -106,9 +107,9 @@ public class Chunk {
 		for (int i = 0; i < ticks; i++) {
 			int pack = CHUNK_RANDOM.nextInt(CHUNK_SIZE);
 			Object object = this.data[pack];
-			if (object instanceof RandomTicking) {
+			if (object instanceof RandTickable) {
 				int ux = pack & 15, uz = (pack >> 4) & 15, uy = ((pack & 0xffff) >> 8);
-				((RandomTicking) object).randTick(offx + ux, uy, offz + uz);
+				((RandTickable) object).randTick(offx + ux, uy, offz + uz);
 			}
 		}
 	}

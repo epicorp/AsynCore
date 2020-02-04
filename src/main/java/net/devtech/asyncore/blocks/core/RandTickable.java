@@ -1,6 +1,6 @@
-package net.devtech.asyncore.blocks.ticking;
+package net.devtech.asyncore.blocks.core;
 
-public interface RandomTicking {
+public interface RandTickable {
 	/**
 	 * This is called randomly when the block is loaded
 	 * @param x the x coordinate of the object

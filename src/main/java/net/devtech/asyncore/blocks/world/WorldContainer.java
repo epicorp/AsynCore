@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -50,10 +51,25 @@ public class WorldContainer {
 		});
 	}
 
-	public void set(int x, int y, int z, Object object) {
+	public Object getAndSet(int x, int y, int z, Object object) {
 		int cx = x >> 4, cz = z >> 4;
-		this.chunks.get((long) cx << 32 | cz & 0xFFFFFFFFL).getAndSet(x, y, z, object);
+		return this.chunks.get((long) cx << 32 | cz & 0xFFFFFFFFL).getAndSet(x, y, z, object);
 	}
+
+	public Object get(int x, int y, int z) {
+		int cx = x >> 4, cz = z >> 4;
+		return this.chunks.get((long) cx << 32 | cz & 0xFFFFFFFFL).get(x, y, z);
+	}
+
+	public Object remove(int x, int y, int z) {
+		return this.getAndSet(x, y, z, null);
+	}
+
+	public boolean setIfVacant(int x, int y, int z, Supplier<Object> objectSupplier) {
+		int cx = x >> 4, cz = z >> 4;
+		return this.chunks.get((long) cx << 32 | cz & 0xFFFFFFFFL).setOrAbort(x, y, z, objectSupplier);
+	}
+
 
 	public void unloadChunk(final int x, final int z) {
 		this.chunkLock.waitFor(x, z, () -> {

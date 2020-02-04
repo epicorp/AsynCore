@@ -1,6 +1,7 @@
 package net.devtech.asyncore;
 
 import net.devtech.asyncore.blocks.world.Chunk;
+import net.devtech.asyncore.blocks.world.ServerAccess;
 import net.devtech.asyncore.blocks.world.ServerManager;
 import net.devtech.asyncore.commands.TestExecutor;
 import net.devtech.asyncore.testing.TestBlock;
@@ -20,6 +21,8 @@ import java.io.IOException;
 public final class AsynCore extends JavaPlugin implements Listener {
 	public static final PersistentRegistry PERSISTENT_REGISTRY = new SimplePersistentRegistry();
 	public static AsynCore instance;
+	private static ServerManager manager;
+	public static ServerAccess access;
 
 	static {
 		// TODO YAJSLib should use default constructor, not unsafe alloc
@@ -28,7 +31,7 @@ public final class AsynCore extends JavaPlugin implements Listener {
 		PERSISTENT_REGISTRY.register(TestBlock.class, new AnnotatedPersistent<>(TestBlock.class, 2341234556789L));
 	}
 
-	public static ServerManager manager;
+
 
 	@Override
 	public void onEnable() {
@@ -50,6 +53,7 @@ public final class AsynCore extends JavaPlugin implements Listener {
 		
 		File file = new File(this.getDataFolder(), AsynCoreConfig.worldDir);
 		manager = new ServerManager(file);
+		access = manager;
 		Bukkit.getPluginManager().registerEvents(manager, this);
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
 			manager.tick(); // tick server

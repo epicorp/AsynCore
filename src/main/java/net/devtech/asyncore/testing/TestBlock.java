@@ -1,6 +1,6 @@
 package net.devtech.asyncore.testing;
 
-import net.devtech.asyncore.blocks.ticking.Ticking;
+import net.devtech.asyncore.blocks.core.Tickable;
 import net.devtech.yajslib.annotations.Reader;
 import net.devtech.yajslib.annotations.Writer;
 import net.devtech.yajslib.io.PersistentInput;
@@ -8,7 +8,7 @@ import net.devtech.yajslib.io.PersistentOutput;
 import org.bukkit.World;
 import java.io.IOException;
 
-public class TestBlock implements Ticking {
+public class TestBlock implements Tickable {
 	private int i;
 	@Override
 	public void tick(World world, int x, int y, int z) {

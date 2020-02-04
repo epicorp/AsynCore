@@ -1,11 +1,11 @@
-package net.devtech.asyncore.blocks.ticking;
+package net.devtech.asyncore.blocks.core;
 
 import org.bukkit.World;
 
 /**
  * a block that ticks
  */
-public interface Ticking {
+public interface Tickable {
 	/**
 	 * Tick the block, this is called on regular intervals
 	 * @param world the world the object is in
