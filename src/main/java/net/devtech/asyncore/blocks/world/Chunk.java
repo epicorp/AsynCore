@@ -4,10 +4,12 @@ import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 import net.devtech.asyncore.blocks.ticking.RandomTicking;
 import net.devtech.asyncore.blocks.ticking.Ticking;
+import net.devtech.asyncore.util.ref.WorldRef;
 import net.devtech.yajslib.annotations.Reader;
 import net.devtech.yajslib.annotations.Writer;
-import net.devtech.yajslib.io.PersistentInputStream;
-import net.devtech.yajslib.io.PersistentOutputStream;
+import net.devtech.yajslib.io.PersistentInput;
+import net.devtech.yajslib.io.PersistentOutput;
+import org.bukkit.World;
 import java.io.IOException;
 import java.util.Random;
 import java.util.function.IntConsumer;
@@ -17,12 +19,21 @@ import java.util.function.IntConsumer;
  * al the methods here do not have to be relativized (they can be absolute coordinates to 0, 0, they will be auto adjusted)
  */
 public class Chunk {
+	private static final int CHUNK_SIZE = 16 * 256 * 16;
 	private static final Random CHUNK_RANDOM = new Random();
 	private final ShortSet tickables = new ShortOpenHashSet();
-	private static final int CHUNK_SIZE = 16 * 256 * 16;
 	private final Object[] data = new Object[CHUNK_SIZE];
+	WorldRef world;
 	int objects;
 	boolean isLoaded = true;
+
+	// for serialization
+	@Deprecated
+	public Chunk() {}
+	// for world stuff
+	public Chunk(World world) {
+		this.world = new WorldRef(world);
+	}
 
 	/**
 	 * get the object stored at the given position
@@ -41,8 +52,7 @@ public class Chunk {
 		T old = (T) this.data[index];
 		this.data[index] = _new;
 		this.objects++;
-		if(_new instanceof Ticking)
-			this.tickables.add((short) index);
+		if (_new instanceof Ticking) this.tickables.add((short) index);
 		return old;
 	}
 
@@ -56,7 +66,7 @@ public class Chunk {
 		T old = (T) this.data[index];
 		this.data[index] = null;
 		this.objects--;
-		if(old instanceof Ticking) this.tickables.remove((short) index);
+		if (old instanceof Ticking) this.tickables.remove((short) index);
 		return old;
 	}
 
@@ -71,34 +81,34 @@ public class Chunk {
 		if (old == null) {
 			this.data[index] = object;
 			this.objects++;
-			if(object instanceof Ticking)
-				this.tickables.add((short) index);
+			if (object instanceof Ticking) this.tickables.add((short) index);
 			return true;
 		} else return false;
 	}
 
 	/**
 	 * tick all the tickable blocks inside the chunk
+	 *
 	 * @param cx
 	 * @param cz
 	 */
 	public void tick(int cx, int cz) {
-		final int offx = cx*16;
-		final int offz = cz*16;
+		final int offx = cx * 16;
+		final int offz = cz * 16;
 		this.tickables.forEach((IntConsumer) pack -> {
 			int ux = pack & 15, uz = (pack >> 4) & 15, uy = ((pack & 0xffff) >> 8);
-			((Ticking)(this.data[pack])).tick(offx + ux, uy, offz + uz);
+			((Ticking) (this.data[pack])).tick(this.world.get(), offx + ux, uy, offz + uz);
 		});
 	}
 
 	public void randTick(int cx, int cz, int ticks) {
-		final int offx = cx*16;
-		final int offz = cz*16;
+		final int offx = cx * 16;
+		final int offz = cz * 16;
 		// we can technically keep track of the random ticking blocks and tick them that way, but meh.
 		for (int i = 0; i < ticks; i++) {
 			int pack = CHUNK_RANDOM.nextInt(CHUNK_SIZE);
 			Object object = this.data[pack];
-			if(object instanceof RandomTicking) {
+			if (object instanceof RandomTicking) {
 				int ux = pack & 15, uz = (pack >> 4) & 15, uy = ((pack & 0xffff) >> 8);
 				((RandomTicking) object).randTick(offx + ux, uy, offz + uz);
 			}
@@ -114,14 +124,16 @@ public class Chunk {
 	}
 
 	@Reader (9072059811478052715L)
-	protected final void reader(PersistentInputStream input) throws IOException {
+	protected final void reader(PersistentInput input) throws IOException {
 		input.readArray(this.data);
 		this.objects = input.readInt();
+		this.world = (WorldRef) input.readPersistent();
 	}
 
 	@Writer (9072059811478052715L)
-	protected final void writer(PersistentOutputStream output) throws IOException {
+	protected final void writer(PersistentOutput output) throws IOException {
 		output.writeArray(this.data);
 		output.writeInt(this.objects);
+		output.writePersistent(this.world);
 	}
 }

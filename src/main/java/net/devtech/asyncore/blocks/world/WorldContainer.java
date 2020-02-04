@@ -1,7 +1,6 @@
 package net.devtech.asyncore.blocks.world;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMaps;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.devtech.asyncore.AsynCore;
 import net.devtech.asyncore.util.ref.WorldRef;
@@ -9,8 +8,6 @@ import net.devtech.asyncore.util.threading.GenericLock;
 import net.devtech.asyncore.util.threading.PointLock;
 import net.devtech.yajslib.io.PersistentInputStream;
 import net.devtech.yajslib.io.PersistentOutputStream;
-import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
-import org.apache.commons.compress.compressors.lzma.LZMACompressorOutputStream;
 import org.bukkit.World;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,13 +15,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class WorldContainer {
 	private final PointLock chunkLock = new PointLock();
 	private final GenericLock worldLock = new GenericLock();
 	private final Long2ObjectMap<Chunk> chunks = new Long2ObjectOpenHashMap<>();
 	private static final Logger LOGGER = Logger.getLogger("WorldContainer");
-	private static final String FILE_PATTERN = "%d-%d.dat";
+	private static final String FILE_PATTERN = "%d,%d.dat";
 	private final WorldRef world;
 	private final File worldDir;
 
@@ -36,8 +35,8 @@ public class WorldContainer {
 	public void loadChunk(final int x, final int z) {
 		this.chunkLock.waitFor(x, z, () -> {
 			File chunkFile = new File(this.worldDir, String.format(FILE_PATTERN, x, z));
-			if(chunkFile.exists()) {
-				try (PersistentInputStream input = new PersistentInputStream(new LZMACompressorInputStream(new FileInputStream(chunkFile)), AsynCore.PERSISTENT_REGISTRY)) {
+			if (chunkFile.exists()) {
+				try (PersistentInputStream input = new PersistentInputStream(new GZIPInputStream(new FileInputStream(chunkFile)), AsynCore.PERSISTENT_REGISTRY)) {
 					Object chunk = input.readPersistent();
 					if (!(chunk instanceof Chunk)) throw new IOException(chunk + " ohno");
 					this.worldLock.wait(() -> this.chunks.put((long) x << 32 | z & 0xFFFFFFFFL, (Chunk) chunk));
@@ -46,26 +45,36 @@ public class WorldContainer {
 					e.printStackTrace();
 				}
 			} else { // new chunk
-				this.worldLock.wait(() -> this.chunks.put((long) x << 32 | z & 0xFFFFFFFFL, new Chunk()));
+				this.worldLock.wait(() -> this.chunks.put((long) x << 32 | z & 0xFFFFFFFFL, new Chunk(this.world.get())));
 			}
 		});
+	}
+
+	public void set(int x, int y, int z, Object object) {
+		int cx = x >> 4, cz = z >> 4;
+		this.chunks.get((long) cx << 32 | cz & 0xFFFFFFFFL).getAndSet(x, y, z, object);
 	}
 
 	public void unloadChunk(final int x, final int z) {
 		this.chunkLock.waitFor(x, z, () -> {
 			File chunkFile = new File(this.worldDir, String.format(FILE_PATTERN, x, z));
-			try (PersistentOutputStream output = new PersistentOutputStream(new LZMACompressorOutputStream(new FileOutputStream(chunkFile)), AsynCore.PERSISTENT_REGISTRY)) {
-				Chunk chunk = this.chunks.remove((long) x << 32 | z & 0xFFFFFFFFL);
-				chunk.isLoaded = false; // invalidate any old references
-				if(chunk.objects == 0)
-					if(!chunkFile.delete() && chunkFile.exists()) {
-						LOGGER.severe("Unable to delete chunk file " + chunkFile);
-					}
-				else
+			Chunk chunk = this.chunks.remove((long) x << 32 | z & 0xFFFFFFFFL);
+			if (chunk.objects == 0) {
+				if (!chunkFile.delete() && chunkFile.exists()) {
+					LOGGER.severe("Unable to delete chunk file " + chunkFile);
+				}
+			} else {
+				if (!chunkFile.exists()) {
+					chunkFile.getParentFile().mkdirs();
+				}
+				// TODO zstd compressor stream
+				try (PersistentOutputStream output = new PersistentOutputStream(new GZIPOutputStream(new FileOutputStream(chunkFile)), AsynCore.PERSISTENT_REGISTRY)) {
+					chunk.isLoaded = false; // invalidate any old references
 					output.writePersistent(chunk); // this may need a world lock but I don't think it does
-			} catch (IOException e) {
-				LOGGER.log(Level.SEVERE, "Chunk write failure in world: " + this.world.get().getName() + " at chunk " + x + ", " + z, e);
-				e.printStackTrace();
+				} catch (IOException e) {
+					LOGGER.log(Level.SEVERE, "Chunk write failure in world: " + this.world.get().getName() + " at chunk " + x + ", " + z, e);
+					e.printStackTrace();
+				}
 			}
 		});
 	}
@@ -73,16 +82,21 @@ public class WorldContainer {
 	public void tick() {
 		this.worldLock.waitFor();
 		this.worldLock.lock();
-		for (Long2ObjectMap.Entry<Chunk> entry : Long2ObjectMaps.fastIterable(this.chunks)) {
-			Chunk chunk = entry.getValue();
-			long key = entry.getLongKey();
-			int x = (int) (key >> 32);
-			int z = (int) key;
-			// chunk ticking must be forced main thread
-			this.chunkLock.waitAndLock(x, z);
-			if(chunk.isLoaded) // prevent reloading unloaded chunks
-				chunk.tick(x, z);
-			this.chunkLock.unlock(x, z);
+		try {
+			this.chunks.forEach((key, chunk) -> { // replace with fast for each
+				int x = (int) (key >> 32);
+				int z = key.intValue();
+				// chunk ticking must be forced main thread
+				this.chunkLock.waitAndLock(x, z);
+				if (chunk.isLoaded) {// prevent reloading unloaded chunks
+					chunk.tick(x, z);
+					chunk.randTick(x, z, 3); // TODO config option
+				}
+				this.chunkLock.unlock(x, z);
+			});
+		} catch (Throwable throwable) {
+			LOGGER.severe("Ticking error!");
+			throwable.printStackTrace();
 		}
 		this.worldLock.unlock();
 	}

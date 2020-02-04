@@ -24,7 +24,7 @@ public abstract class BukkitRef<T, I> {
 
 	@Override
 	public boolean equals(Object object) {
-		return this == object || object instanceof BukkitRef && this.internal.equals(object);
+		return this == object || object instanceof BukkitRef && this.internal.equals(((BukkitRef) object).internal);
 	}
 
 	@Override

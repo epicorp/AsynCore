@@ -6,7 +6,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class GenericLock {
-	private AtomicBoolean locked = new AtomicBoolean(false);
+	private volatile AtomicBoolean locked = new AtomicBoolean(false);
 	private Queue<Runnable> listeners = new LinkedBlockingQueue<>();
 	public void waitFor() {
 		while (this.isLocked());
