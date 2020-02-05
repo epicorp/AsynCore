@@ -75,7 +75,7 @@ public class WorldContainer {
 		this.chunkLock.waitFor(x, z, () -> {
 			File chunkFile = new File(this.worldDir, String.format(FILE_PATTERN, x, z));
 			Chunk chunk = this.chunks.remove((long) x << 32 | z & 0xFFFFFFFFL);
-			if (chunk.objects == 0) {
+			if (chunk.data.isEmpty()) {
 				if (!chunkFile.delete() && chunkFile.exists()) {
 					LOGGER.severe("Unable to delete chunk file " + chunkFile);
 				}
