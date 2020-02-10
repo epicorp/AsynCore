@@ -8,28 +8,27 @@ public interface ServerAccess {
 	/**
 	 * @see #update(World, int, int, int)
 	 */
-	default boolean update(Location location) {
-		return this.update(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
+	default void update(Location location) {
+		this.update(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
 	}
 
 	/**
-	 * update the block/object at the location, block must be {@link net.devtech.asyncore.blocks.core.Updateable}
-	 * @return true if the block at the location was Updateable
+	 * update the block/object at the location
 	 */
-	boolean update(World world, int x, int y, int z);
+	void update(World world, int x, int y, int z);
 
 	/**
-	 * @see #getAndPlace(World, int, int, int, Object)
+	 * @see #getAndSet(World, int, int, int, Object)
 	 */
-	default Object getAndPlace(Location location, Object object) {
-		return this.getAndPlace(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), object);
+	default Object getAndSet(Location location, Object object) {
+		return this.getAndSet(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), object);
 	}
 
 	/**
 	 * get the object at the location and set the new one in it's place
 	 * @return null if there was no object there before
 	 */
-	Object getAndPlace(World world, int x, int y, int z, Object object);
+	Object getAndSet(World world, int x, int y, int z, Object object);
 
 	/**
 	 * @see #remove(World, int, int, int)
@@ -42,7 +41,7 @@ public interface ServerAccess {
 	 * removes the object at the given location and returns it
 	 */
 	default Object remove(World world, int x, int y, int z) {
-		return this.getAndPlace(world, x, y, z, null);
+		return this.getAndSet(world, x, y, z, null);
 	}
 
 	/**

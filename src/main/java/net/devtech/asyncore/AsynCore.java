@@ -1,6 +1,6 @@
 package net.devtech.asyncore;
 
-import net.devtech.asyncore.blocks.world.Chunk;
+import net.devtech.asyncore.blocks.world.DataChunk;
 import net.devtech.asyncore.blocks.world.ServerAccess;
 import net.devtech.asyncore.blocks.world.ServerManager;
 import net.devtech.asyncore.commands.TestExecutor;
@@ -10,7 +10,6 @@ import net.devtech.yajslib.persistent.AnnotatedPersistent;
 import net.devtech.yajslib.persistent.PersistentRegistry;
 import net.devtech.yajslib.persistent.SimplePersistentRegistry;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.Listener;
@@ -26,7 +25,7 @@ public final class AsynCore extends JavaPlugin implements Listener {
 
 	static {
 		// TODO YAJSLib should use default constructor, not unsafe alloc
-		PERSISTENT_REGISTRY.register(Chunk.class, new AnnotatedPersistent<>(Chunk::new, Chunk.class, 9072059811478052715L));
+		PERSISTENT_REGISTRY.register(DataChunk.class, new AnnotatedPersistent<>(DataChunk::new, DataChunk.class, 9072059811478052715L));
 		PERSISTENT_REGISTRY.register(WorldRef.class, new WorldRef.WorldRefPersistent());
 		PERSISTENT_REGISTRY.register(TestBlock.class, new AnnotatedPersistent<>(TestBlock.class, 2341234556789L));
 	}

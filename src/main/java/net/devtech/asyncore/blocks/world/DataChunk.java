@@ -3,6 +3,8 @@ package net.devtech.asyncore.blocks.world;
 import it.unimi.dsi.fastutil.shorts.*;
 import net.devtech.asyncore.blocks.core.RandTickable;
 import net.devtech.asyncore.blocks.core.Tickable;
+import net.devtech.asyncore.blocks.events.LocalEventManager;
+import net.devtech.asyncore.blocks.events.LocalListener;
 import net.devtech.asyncore.util.ref.WorldRef;
 import net.devtech.yajslib.annotations.Reader;
 import net.devtech.yajslib.annotations.Writer;
@@ -12,6 +14,7 @@ import org.bukkit.World;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
@@ -19,9 +22,10 @@ import java.util.function.Supplier;
  * there's alot of code duplication here, mostly micro optimizations but eh
  * al the methods here do not have to be relativized (they can be absolute coordinates to 0, 0, they will be auto adjusted)
  */
-public class Chunk {
+public class DataChunk {
 	private static final int CHUNK_SIZE = 16 * 256 * 16;
 	private static final Random CHUNK_RANDOM = new Random();
+	private final LocalEventManager manager = new LocalEventManager();
 	private final ShortSet tickables = new ShortOpenHashSet();
 	final Short2ObjectMap<Object> data = new Short2ObjectOpenHashMap<>();
 	WorldRef world;
@@ -29,10 +33,10 @@ public class Chunk {
 
 	// for serialization
 	@Deprecated
-	public Chunk() {}
+	public DataChunk() {}
 
 	// for world stuff
-	public Chunk(World world) {
+	public DataChunk(World world) {
 		this.world = new WorldRef(world);
 	}
 
@@ -50,9 +54,12 @@ public class Chunk {
 	 */
 	public <T> T getAndSet(int x, int y, int z, Object _new) {
 		short index = (short) (x & 15 | (z & 15) << 4 | y << 8); // index compaction
+		this.manager.remove(index); // unregister old block listeners
 		T old = (T) this.data.put(index, _new);
 		if (_new instanceof Tickable)
 			this.tickables.add(index);
+		if(_new instanceof LocalListener) // register new block events
+			this.manager.register((LocalListener) _new, index);
 		return old;
 	}
 
@@ -63,6 +70,7 @@ public class Chunk {
 	 */
 	public <T> T getAndRemove(int x, int y, int z) {
 		short index = (short) (x & 15 | (z & 15) << 4 | y << 8); // index compaction
+		this.manager.remove(index); // unregister old block listeners
 		T old = (T) this.data.remove(index);
 		if (old instanceof Tickable) this.tickables.remove(index);
 		return old;
@@ -77,7 +85,10 @@ public class Chunk {
 		short index = (short) (x & 15 | (z & 15) << 4 | y << 8); // index compaction
 		Object[] ref = {null};
 		Object returned = this.data.computeIfAbsent(index, i -> ref[0] = object.get());
-		return ref[0] == returned; // hacc
+		boolean success = ref[0] == returned;
+		if(success && returned instanceof LocalListener)
+			this.manager.register((LocalListener) returned, index);
+		return success; // hacc
 	}
 	/**
 	 * tick all the tickable blocks inside the chunk
@@ -105,6 +116,10 @@ public class Chunk {
 		}
 	}
 
+	public void handleEvent(Object event, int x, int y, int z) {
+		this.manager.invoke((short) (x & 15 | (z & 15) << 4 | y << 8), event);
+	}
+
 	public boolean isLoaded() {
 		return this.isLoaded;
 	}
@@ -113,7 +128,11 @@ public class Chunk {
 	protected final void reader(PersistentInput input) throws IOException {
 		int objects = input.readInt();
 		for (int i = 0; i < objects; i++) {
-			this.data.put(input.readShort(), input.readPersistent());
+			short index = input.readShort();
+			Object _new = input.readPersistent();
+			this.data.put(index, _new);
+			if(_new instanceof LocalListener) // register new block events
+				this.manager.register((LocalListener) _new, index);
 		}
 		this.world = (WorldRef) input.readPersistent();
 		int i = input.readInt();

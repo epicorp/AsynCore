@@ -1,12 +1,13 @@
 package net.devtech.asyncore.blocks.world;
 
 import net.devtech.asyncore.AsynCoreConfig;
-import net.devtech.asyncore.blocks.core.Breakable;
-import net.devtech.asyncore.blocks.core.Placeable;
-import net.devtech.asyncore.blocks.core.Updateable;
+import net.devtech.asyncore.events.BreakEvent;
+import net.devtech.asyncore.events.PlaceEvent;
+import net.devtech.asyncore.events.UpdateEvent;
 import net.devtech.asyncore.util.ref.WorldRef;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -80,35 +81,29 @@ public class ServerManager implements Listener, ServerAccess {
 	}
 
 	@Override
-	public boolean update(World world, int x, int y, int z) {
+	public void update(World world, int x, int y, int z) {
 		WorldRef ref = new WorldRef(world);
-		Object object = this.worlds.get(ref).get(x, y, z);
-		if (object instanceof Updateable) {
-			((Updateable) object).update(world, x, y, z);
-			return true;
-		}
-		return false;
+		DataChunk object = this.worlds.get(ref).getChunk(x >> 4, z >> 4);
+		object.handleEvent(new UpdateEvent(new Location(world, x, y, z)), x, y, z);
 	}
 
 	@Override
-	public Object getAndPlace(World world, int x, int y, int z, Object object) {
+	public Object getAndSet(World world, int x, int y, int z, Object object) {
 		WorldRef ref = new WorldRef(world);
-		if (object instanceof Placeable) {
-			((Placeable) object).place(world, x, y, z);
-		}
-
+		DataChunk chunk = this.worlds.get(ref).getChunk(x >> 4, z >> 4);
+		chunk.handleEvent(new BreakEvent(new Location(world, x, y, z)), x, y, z);
 		Object old = this.worlds.get(ref).getAndSet(x, y, z, object);
-		if(old instanceof Breakable)
-			((Breakable) old).destroy(world, x, y, z);
+		chunk.handleEvent(new PlaceEvent(new Location(world, x, y, z)), x, y, z);
 		return old;
 	}
 
 	@Override
 	public boolean setIfVacant(World world, int x, int y, int z, Supplier<Object> objectSupplier) {
-		return this.worlds.get(new WorldRef(world)).setIfVacant(x, y, z, () -> {
+		WorldRef ref = new WorldRef(world);
+		return this.worlds.get(ref).setIfVacant(x, y, z, () -> {
 			Object get = objectSupplier.get();
-			if(get instanceof Placeable)
-				((Placeable) get).place(world, x, y, z);
+			DataChunk chunk = this.worlds.get(ref).getChunk(x >> 4, z >> 4);
+			chunk.handleEvent(new PlaceEvent(new Location(world, x, y, z)), x, y, z);
 			return get;
 		});
 	}
