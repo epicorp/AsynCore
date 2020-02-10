@@ -15,14 +15,14 @@ public class TestExecutor implements CommandExecutor {
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if (args.length == 1 && args[0].equals("a")) {
-			if (sender instanceof Player) AsynCore.access.update(((Player) sender).getLocation());
+			if (sender instanceof Player) AsynCore.mainAccess.update(((Player) sender).getLocation());
 			else
 				return false;
 		} else {
 			if (sender instanceof Player) {
-				AsynCore.access.getAndSet(((Player) sender).getLocation(), new TestBlock());
+				AsynCore.mainAccess.getAndSet(((Player) sender).getLocation(), new TestBlock());
 			} else {
-				AsynCore.access.getAndSet(Bukkit.getWorlds().get(0), RANDOM.nextInt(64), RANDOM.nextInt(256), RANDOM.nextInt(64), new TestBlock());
+				AsynCore.mainAccess.getAndSet(Bukkit.getWorlds().get(0), RANDOM.nextInt(64), RANDOM.nextInt(256), RANDOM.nextInt(64), new TestBlock());
 			}
 		}
 		return true;

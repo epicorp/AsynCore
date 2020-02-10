@@ -1,73 +1,87 @@
-package net.devtech.asyncore.blocks.world;
+package net.devtech.asyncore.world.server;
 
+import net.devtech.asyncore.world.chunk.DataChunk;
+import net.devtech.utilib.functions.QuadConsumer;
+import net.devtech.utilib.functions.QuadFunction;
 import org.bukkit.Location;
 import org.bukkit.World;
 import java.util.function.Supplier;
 
-public interface ServerAccess {
-	/**
-	 * @see #update(World, int, int, int)
-	 */
-	default void update(Location location) {
-		this.update(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
-	}
+public interface ServerAccess<T> {
 
 	/**
-	 * update the block/object at the location
+	 * @see #getAndSet(World, int, int, int, T)
 	 */
-	void update(World world, int x, int y, int z);
-
-	/**
-	 * @see #getAndSet(World, int, int, int, Object)
-	 */
-	default Object getAndSet(Location location, Object object) {
+	default T getAndSet(Location location, T object) {
 		return this.getAndSet(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), object);
 	}
 
 	/**
 	 * get the object at the location and set the new one in it's place
+	 *
 	 * @return null if there was no object there before
 	 */
-	Object getAndSet(World world, int x, int y, int z, Object object);
+	T getAndSet(World world, int x, int y, int z, T object);
 
 	/**
 	 * @see #remove(World, int, int, int)
 	 */
-	default Object remove(Location location) {
+	default T remove(Location location) {
 		return this.remove(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
 	}
 
 	/**
 	 * removes the object at the given location and returns it
 	 */
-	default Object remove(World world, int x, int y, int z) {
+	default T remove(World world, int x, int y, int z) {
 		return this.getAndSet(world, x, y, z, null);
 	}
 
 	/**
 	 * @see #setIfVacant(World, int, int, int, Supplier)
 	 */
-	default boolean setIVacant(Location location, Supplier<Object> objectSupplier) {
+	default boolean setIVacant(Location location, Supplier<T> objectSupplier) {
 		return this.setIfVacant(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), objectSupplier);
 	}
 
 	/**
 	 * only sets the object at the location if there is no other object already there
+	 *
 	 * @return true if the object was placed (there was no object there already)
 	 */
-	boolean setIfVacant(World world, int x, int y, int z, Supplier<Object> objectSupplier);
+	boolean setIfVacant(World world, int x, int y, int z, Supplier<T> objectSupplier);
 
 	/**
 	 * @see #get(World, int, int, int)
 	 */
-	default Object get(Location location) {
+	default T get(Location location) {
 		return this.get(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
 	}
 
 	/**
 	 * gets the object at the location
+	 *
 	 * @return null if none was there
 	 */
-	Object get(World world, int x, int y, int z);
+	T get(World world, int x, int y, int z);
+
+	/**
+	 * get the chunk at the given location
+	 *
+	 * @param world the world the chunk is in
+	 * @param cx the chunk's x coordinate
+	 * @param cz the chunk's z coordinate
+	 */
+	DataChunk<T> getChunk(World world, int cx, int cz);
+
+	/**
+	 * iterate through all the chunks
+	 * the consumer accepts the
+	 *  world in which the chunk lies
+	 *  it's x coordinate
+	 *  it's z coordinate
+	 *  and the chunk itself
+	 */
+	void forChunks(QuadConsumer<World, Integer, Integer, DataChunk<T>> chunk);
 }
 

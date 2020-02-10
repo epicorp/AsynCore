@@ -1,8 +1,8 @@
 package net.devtech.asyncore;
 
-import net.devtech.asyncore.blocks.world.DataChunk;
-import net.devtech.asyncore.blocks.world.ServerAccess;
-import net.devtech.asyncore.blocks.world.ServerManager;
+import net.devtech.asyncore.blocks.world.CustomBlockDataChunk;
+import net.devtech.asyncore.blocks.world.CustomBlockServer;
+import net.devtech.asyncore.blocks.world.CustomServerAccess;
 import net.devtech.asyncore.commands.TestExecutor;
 import net.devtech.asyncore.testing.TestBlock;
 import net.devtech.asyncore.util.ref.WorldRef;
@@ -20,12 +20,12 @@ import java.io.IOException;
 public final class AsynCore extends JavaPlugin implements Listener {
 	public static final PersistentRegistry PERSISTENT_REGISTRY = new SimplePersistentRegistry();
 	public static AsynCore instance;
-	private static ServerManager manager;
-	public static ServerAccess access;
+	private static CustomBlockServer manager;
+	public static CustomServerAccess mainAccess;
 
 	static {
 		// TODO YAJSLib should use default constructor, not unsafe alloc
-		PERSISTENT_REGISTRY.register(DataChunk.class, new AnnotatedPersistent<>(DataChunk::new, DataChunk.class, 9072059811478052715L));
+		PERSISTENT_REGISTRY.register(CustomBlockDataChunk.class, new AnnotatedPersistent<>(CustomBlockDataChunk::new, CustomBlockDataChunk.class, 9072059811478052715L));
 		PERSISTENT_REGISTRY.register(WorldRef.class, new WorldRef.WorldRefPersistent());
 		PERSISTENT_REGISTRY.register(TestBlock.class, new AnnotatedPersistent<>(TestBlock.class, 2341234556789L));
 	}
@@ -49,8 +49,8 @@ public final class AsynCore extends JavaPlugin implements Listener {
 		}
 		
 		File file = new File(this.getDataFolder(), AsynCoreConfig.worldDir);
-		manager = new ServerManager(file);
-		access = manager;
+		manager = new CustomBlockServer(file, null /* maybe some special null block here?*/);
+		mainAccess = manager;
 		Bukkit.getPluginManager().registerEvents(manager, this);
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
 			manager.tick(); // tick server
