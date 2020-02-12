@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -29,12 +30,15 @@ public class ServerManager<T> implements Listener, ServerAccess<T> {
 	private final ExecutorService service = Executors.newFixedThreadPool(AsynCoreConfig.threads);
 	private Map<WorldRef, WorldContainer<T>> worlds = new ConcurrentHashMap<>();
 	private final File worldDir;
-	private final Supplier<DataChunk<T>> dataChunkSupplier;
+	private final Function<WorldRef, DataChunk<T>>  dataChunkFunction;
 	private final T _null;
-	public ServerManager(File worldDir, Supplier<DataChunk<T>> supplier, T _null) {
+	public ServerManager(File worldDir, Function<WorldRef, DataChunk<T>> function, T _null) {
 		this.worldDir = worldDir;
-		this.dataChunkSupplier = supplier;
+		this.dataChunkFunction = function;
 		this._null = _null;
+	}
+
+	public void init() {
 		for (World world : Bukkit.getWorlds()) {
 			this.onWorldLoad(new WorldLoadEvent(world));
 		}
@@ -65,7 +69,7 @@ public class ServerManager<T> implements Listener, ServerAccess<T> {
 	@EventHandler
 	public void onWorldLoad(WorldLoadEvent event) {
 		World world = event.getWorld();
-		WorldContainer<T> container = this.worlds.computeIfAbsent(new WorldRef(world), r -> new WorldContainer<>(this.worldDir, r.get(), this._null, this.dataChunkSupplier));
+		WorldContainer<T> container = this.worlds.computeIfAbsent(new WorldRef(world), r -> new WorldContainer<>(this.worldDir, r.get(), this._null, this.dataChunkFunction));
 		for (Chunk chunk : world.getLoadedChunks()) {
 			container.loadChunk(chunk.getX(), chunk.getZ());
 		}

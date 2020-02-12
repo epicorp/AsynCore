@@ -1,15 +1,16 @@
 package net.devtech.asyncore.blocks.world;
 
+import net.devtech.asyncore.blocks.CustomBlock;
 import net.devtech.asyncore.blocks.Tickable;
 import net.devtech.asyncore.blocks.world.events.LocalEventManager;
 import net.devtech.asyncore.world.server.ServerManager;
 import org.bukkit.World;
 import java.io.File;
 
-public class CustomBlockServer extends ServerManager<Object> implements CustomServerAccess {
-	public CustomBlockServer(File worldDir, Object _null) {
-		super(worldDir, () -> {
-			CustomBlockDataChunk chunk = new CustomBlockDataChunk();
+public class CustomBlockServer extends ServerManager<CustomBlock> implements CustomServerAccess {
+	public CustomBlockServer(File worldDir, CustomBlock _null) {
+		super(worldDir, w -> {
+			CustomBlockDataChunk chunk = new CustomBlockDataChunk(w);
 			chunk.addTracker(new ChunkTicker());
 			chunk.addTracker(new LocalEventManager());
 			return chunk;

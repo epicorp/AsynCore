@@ -1,5 +1,6 @@
-package net.devtech.asyncore.blocks.world;
+package net.devtech.asyncore.blocks.world.events;
 
+import net.devtech.asyncore.blocks.world.CustomServerAccess;
 import net.devtech.asyncore.util.ListUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

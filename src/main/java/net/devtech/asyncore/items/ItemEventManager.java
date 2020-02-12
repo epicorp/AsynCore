@@ -1,6 +1,5 @@
 package net.devtech.asyncore.items;
 
-import net.devtech.utilib.functions.TriConsumer;
 import net.devtech.yajslib.persistent.PersistentRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
@@ -42,9 +41,11 @@ public class ItemEventManager {
 		Bukkit.getPluginManager().registerEvent(eventType, DUMMY, priority, (l, e) -> {
 			E event = (E) e;
 			ItemStack converted = converter.apply(event);
-			CustomItem item = CustomItemFactory.from(converted, this.registry);
-			if (predicate.test(item)) {
-				executor.accept((I) item, event);
+			if (converted != null) {
+				CustomItem item = CustomItemFactory.from(converted, this.registry);
+				if (predicate.test(item)) {
+					executor.accept((I) item, event);
+				}
 			}
 		}, this.plugin, ignoreCancelled);
 	}

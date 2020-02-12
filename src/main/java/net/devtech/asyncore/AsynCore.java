@@ -1,13 +1,17 @@
 package net.devtech.asyncore;
 
+import net.devtech.asyncore.blocks.CustomBlock;
 import net.devtech.asyncore.blocks.world.*;
+import net.devtech.asyncore.blocks.world.events.BukkitEventManager;
 import net.devtech.asyncore.blocks.world.events.LocalEventManager;
 import net.devtech.asyncore.commands.TestExecutor;
 import net.devtech.asyncore.items.CanInteractWith;
 import net.devtech.asyncore.items.CanPlace;
+import net.devtech.asyncore.items.CustomItem;
 import net.devtech.asyncore.items.ItemEventManager;
 import net.devtech.asyncore.testing.TestBlock;
 import net.devtech.asyncore.util.ref.WorldRef;
+import net.devtech.asyncore.world.server.ServerAccess;
 import net.devtech.yajslib.persistent.AnnotatedPersistent;
 import net.devtech.yajslib.persistent.PersistentRegistry;
 import net.devtech.yajslib.persistent.SimplePersistentRegistry;
@@ -26,14 +30,14 @@ import java.io.IOException;
 public final class AsynCore extends JavaPlugin implements Listener {
 	public static final PersistentRegistry PERSISTENT_REGISTRY = new SimplePersistentRegistry();
 	public static AsynCore instance;
-	private static CustomBlockServer manager;
-	public static CustomServerAccess mainAccess;
+	public static CustomBlockServer mainAccess;
 	public static ItemEventManager items;
 	public static BukkitEventManager bukkitEventManager;
 	static {
+		// manager is somehow null when reload
+		PERSISTENT_REGISTRY.register(TestBlock.class, new AnnotatedPersistent<>(() -> new TestBlock(PERSISTENT_REGISTRY, mainAccess), TestBlock.class, 2341234556789L));
 		PERSISTENT_REGISTRY.register(CustomBlockDataChunk.class, new AnnotatedPersistent<>(CustomBlockDataChunk::new, CustomBlockDataChunk.class, 9072059811478052715L));
 		PERSISTENT_REGISTRY.register(WorldRef.class, new WorldRef.WorldRefPersistent());
-		PERSISTENT_REGISTRY.register(TestBlock.class, new AnnotatedPersistent<>(() -> new TestBlock(PERSISTENT_REGISTRY, manager), TestBlock.class, 2341234556789L));
 		PERSISTENT_REGISTRY.register(LocalEventManager.class, new AnnotatedPersistent<>(LocalEventManager::new, LocalEventManager.class, 765435676545L));
 		PERSISTENT_REGISTRY.register(ChunkTicker.class, new AnnotatedPersistent<>(ChunkTicker::new, ChunkTicker.class, 4734325434254L));
 	}
@@ -57,18 +61,19 @@ public final class AsynCore extends JavaPlugin implements Listener {
 		}
 
 		File file = new File(this.getDataFolder(), AsynCoreConfig.worldDir);
-		manager = new CustomBlockServer(file, null /* maybe some special null block here?*/);
-		mainAccess = manager;
-		Bukkit.getPluginManager().registerEvents(manager, this);
+		mainAccess = new CustomBlockServer(file, null /* maybe some special null block here?*/);
+
+		Bukkit.getPluginManager().registerEvents(mainAccess, this);
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
-			manager.tick(); // tick server
+			mainAccess.tick(); // tick server
 		}, 0, AsynCoreConfig.ticks);
 		this.getCommand("test").setExecutor(new TestExecutor());
-		bukkitEventManager = new BukkitEventManager(manager, this);
+		bukkitEventManager = new BukkitEventManager(mainAccess, this);
 		bukkitEventManager.addBlockConverter(BlockBreakEvent.class, BlockBreakEvent::getBlock);
 		items = new ItemEventManager(this, PERSISTENT_REGISTRY);
 		items.register(BlockPlaceEvent.class, BlockPlaceEvent::getItemInHand, c -> c instanceof CanPlace, CanPlace::place, EventPriority.NORMAL, false);
 		items.register(PlayerInteractEvent.class, PlayerInteractEvent::getItem, c -> c instanceof CanInteractWith, CanInteractWith::interact, EventPriority.NORMAL, false);
+		mainAccess.init();
 		this.getLogger().info("AsynCore has been loaded!");
 	}
 
@@ -84,6 +89,6 @@ public final class AsynCore extends JavaPlugin implements Listener {
 			this.getLogger().severe("error in saving config!");
 			e.printStackTrace();
 		}
-		manager.shutdown();
+		mainAccess.shutdown();
 	}
 }

@@ -7,6 +7,7 @@ import java.io.IOException;
 
 public class CustomItemFactory {
 	private CustomItemFactory() {}
+
 	public static ItemStack createNew(PersistentRegistry registry, Class<? extends CustomItem> type) {
 		return wrap(registry, registry.blank(type));
 	}
@@ -24,7 +25,9 @@ public class CustomItemFactory {
 	public static CustomItem from(PersistentRegistry registry, ItemStack stack) {
 		try {
 			NBTItem nbt = new NBTItem(stack);
-			return (CustomItem) registry.fromByteArray(nbt.getByteArray("asyncore.object_data"));
+			byte[] data = nbt.getByteArray("asyncore.object_data");
+			if (data.length != 0) return (CustomItem) registry.fromByteArray(data);
+			else return null;
 		} catch (IOException e) {
 			throw new RuntimeException("Fatal error in parsing custom object!", e);
 		}
@@ -33,7 +36,9 @@ public class CustomItemFactory {
 	public static <T> T from(ItemStack stack, PersistentRegistry registry) {
 		try {
 			NBTItem nbt = new NBTItem(stack);
-			return (T) registry.fromByteArray(nbt.getByteArray("asyncore.object_data"));
+			byte[] data = nbt.getByteArray("asyncore.object_data");
+			if (data.length != 0) return (T) registry.fromByteArray(data);
+			else return null;
 		} catch (IOException e) {
 			throw new RuntimeException("Fatal error in parsing custom object!", e);
 		}

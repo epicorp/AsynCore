@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,13 +43,13 @@ public class WorldContainer<T> {
 	private static final String FILE_PATTERN = "%d,%d.dat";
 	private final WorldRef world;
 	private final File worldDir;
-	private final Supplier<DataChunk<T>> supplier;
+	private final Function<WorldRef, DataChunk<T>> function;
 
-	public WorldContainer(File worldsDir, World world, T _null, Supplier<DataChunk<T>> supplier) {
+	public WorldContainer(File worldsDir, World world, T _null, Function<WorldRef, DataChunk<T>> function) {
 		this.emptyChunk = new EmptyChunk<>(_null);
 		this.world = new WorldRef(world);
 		this.worldDir = new File(worldsDir, world.getName());
-		this.supplier = supplier;
+		this.function = function;
 	}
 
 	/**
@@ -56,7 +57,7 @@ public class WorldContainer<T> {
 	 */
 	public T getAndSet(int x, int y, int z, T object) {
 		int cx = x >> 4, cz = z >> 4;
-		return this.chunks.getOrDefault((long) cx << 32 | cz & 0xFFFFFFFFL, this.emptyChunk).getAndSet(x & 15, y, z & 15, object);
+		return this.chunks.getOrDefault((long) cx << 32 | cz & 0xFFFFFFFFL, this.emptyChunk).getAndSet(x, y, z, object);
 	}
 
 	/**
@@ -64,14 +65,14 @@ public class WorldContainer<T> {
 	 */
 	public T get(int x, int y, int z) {
 		int cx = x >> 4, cz = z >> 4;
-		return this.chunks.getOrDefault((long) cx << 32 | cz & 0xFFFFFFFFL, this.emptyChunk).get(x & 15, y, z & 15);
+		return this.chunks.getOrDefault((long) cx << 32 | cz & 0xFFFFFFFFL, this.emptyChunk).get(x, y, z);
 	}
 
 	/**
 	 * remove the object at the location
 	 */
 	public T remove(int x, int y, int z) {
-		return this.getAndSet(x & 15, y, z & 15, null);
+		return this.getAndSet(x, y, z, null);
 	}
 
 	/**
@@ -80,7 +81,7 @@ public class WorldContainer<T> {
 	 */
 	public boolean setIfVacant(int x, int y, int z, Supplier<T> objectSupplier) {
 		int cx = x >> 4, cz = z >> 4;
-		return this.chunks.getOrDefault((long) cx << 32 | cz & 0xFFFFFFFFL, this.emptyChunk).setOrAbort(x & 15, y, z & 15, objectSupplier);
+		return this.chunks.getOrDefault((long) cx << 32 | cz & 0xFFFFFFFFL, this.emptyChunk).setOrAbort(x, y, z, objectSupplier);
 	}
 
 	/**
@@ -109,17 +110,14 @@ public class WorldContainer<T> {
 			File chunkFile = new File(this.worldDir, String.format(FILE_PATTERN, x, z));
 			DataChunk<T> chunk = this.chunks.remove((long) x << 32 | z & 0xFFFFFFFFL);
 			if (chunk.isEmpty()) {
-				if (!chunkFile.delete() && chunkFile.exists()) {
+				if (chunkFile.exists() && !chunkFile.delete()) {
 					LOGGER.severe("Unable to delete chunk file " + chunkFile);
 				}
 			} else {
-				if (!chunkFile.exists()) {
-					if (!chunkFile.getParentFile().mkdirs()) {
-						LOGGER.severe("oh god oh fuck critical failure with " + chunkFile);
-						return;
-					}
-				}
 				// TODO zstd compressor stream
+				File parent = chunkFile.getParentFile();
+				if(!parent.exists())
+					parent.mkdirs();
 				try (PersistentOutputStream output = new PersistentOutputStream(new GZIPOutputStream(new FileOutputStream(chunkFile)), AsynCore.PERSISTENT_REGISTRY)) {
 					chunk.setLoaded(false); // invalidate any old references
 					output.writePersistent(chunk); // this may need a world lock but I don't think it does
@@ -147,7 +145,7 @@ public class WorldContainer<T> {
 					e.printStackTrace();
 				}
 			} else { // new chunk
-				this.worldLock.wait(() -> this.chunks.put((long) x << 32 | z & 0xFFFFFFFFL, this.supplier.get()));
+				this.worldLock.wait(() -> this.chunks.put((long) x << 32 | z & 0xFFFFFFFFL, this.function.apply(this.world)));
 			}
 		});
 	}

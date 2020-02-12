@@ -2,6 +2,7 @@ package net.devtech.asyncore.blocks.world;
 
 import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
+import net.devtech.asyncore.blocks.CustomBlock;
 import net.devtech.asyncore.blocks.Tickable;
 import net.devtech.asyncore.util.func.CoordConsumer;
 import net.devtech.asyncore.world.chunk.BlockTracker;
@@ -12,23 +13,23 @@ import net.devtech.yajslib.io.PersistentInput;
 import net.devtech.yajslib.io.PersistentOutput;
 import java.io.IOException;
 
-public class ChunkTicker implements BlockTracker<Object> {
+public class ChunkTicker implements BlockTracker<CustomBlock> {
 	private ShortSet tickables = new ShortOpenHashSet();
 
 	@Override
-	public void init(DataChunk<Object> chunk) {
+	public void init(DataChunk<CustomBlock> chunk) {
 		// nothing to do
 	}
 
 	@Override
-	public void set(int x, int y, int z, Object object) {
+	public void set(int x, int y, int z, CustomBlock object) {
 		if(object instanceof Tickable) {
 			this.tickables.add((short) (x | z << 4 | y << 8));
 		}
 	}
 
 	@Override
-	public void remove(int x, int y, int z, Object object) {
+	public void remove(int x, int y, int z, CustomBlock object) {
 		if(object instanceof Tickable)
 			this.tickables.remove((short) (x | z << 4 | y << 8));
 	}

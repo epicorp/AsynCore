@@ -1,10 +1,11 @@
 package net.devtech.asyncore.blocks.world;
 
+import net.devtech.asyncore.blocks.CustomBlock;
 import net.devtech.asyncore.world.server.ServerAccess;
 import org.bukkit.Location;
 import org.bukkit.World;
 
-public interface CustomServerAccess extends ServerAccess<Object> {
+public interface CustomServerAccess extends ServerAccess<CustomBlock> {
 	default void invoke(Location location, Object event) {
 		this.invoke(event, location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
 	}

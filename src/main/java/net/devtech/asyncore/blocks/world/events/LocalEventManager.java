@@ -2,6 +2,7 @@ package net.devtech.asyncore.blocks.world.events;
 
 import it.unimi.dsi.fastutil.shorts.Short2ObjectMap;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
+import net.devtech.asyncore.blocks.CustomBlock;
 import net.devtech.asyncore.world.chunk.BlockTracker;
 import net.devtech.asyncore.world.chunk.DataChunk;
 import net.devtech.utilib.functions.ThrowingConsumer;
@@ -23,7 +24,7 @@ import java.util.logging.Logger;
 /**
  * manages events for a chunk
  */
-public class LocalEventManager implements BlockTracker<Object> {
+public class LocalEventManager implements BlockTracker<CustomBlock> {
 	private static final Map<Class<?>, TriConsumer<LocalEventManager, Object, Short>> REFLECTION_CACHE = new ConcurrentHashMap<>();
 
 	private static final Map<Class<?>, List<Consumer<?>>[]> DUMMY_MAP = Collections.emptyMap();
@@ -32,7 +33,7 @@ public class LocalEventManager implements BlockTracker<Object> {
 	private final Short2ObjectMap<Map<Class<?>, List<Consumer<?>>[]>> listenerMap = new Short2ObjectOpenHashMap<>();
 
 	@Override
-	public void init(DataChunk<Object> chunk) {
+	public void init(DataChunk<CustomBlock> chunk) {
 		for (short pack : this.listenerMap.keySet()) { // filled with dummy maps
 			int x = pack & 15, z = (pack >> 4) & 15, y = ((pack & 0xffff) >> 8);
 			this.listenerMap.remove(pack);
@@ -41,12 +42,12 @@ public class LocalEventManager implements BlockTracker<Object> {
 	}
 
 	@Override
-	public void set(int x, int y, int z, Object object) {
+	public void set(int x, int y, int z, CustomBlock object) {
 		REFLECTION_CACHE.computeIfAbsent(object.getClass(), LocalEventManager::compute).accept(this, object, (short) (x | z << 4 | y << 8));
 	}
 
 	@Override
-	public void remove(int x, int y, int z, Object object) {
+	public void remove(int x, int y, int z, CustomBlock object) {
 		this.listenerMap.remove((short) (x | z << 4 | y << 8));
 	}
 
@@ -58,6 +59,7 @@ public class LocalEventManager implements BlockTracker<Object> {
 	 */
 	@SuppressWarnings ({"unchecked", "rawtypes"})
 	public void invoke(short key, Object event) {
+		System.out.println(key + " " + this.listenerMap);
 		Map<Class<?>, List<Consumer<?>>[]> arr = this.listenerMap.get(key);
 		if (arr != null) {
 			List<Consumer<?>>[] listeners = arr.get(event.getClass());

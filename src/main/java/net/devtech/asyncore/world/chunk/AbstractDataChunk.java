@@ -45,6 +45,9 @@ public abstract class AbstractDataChunk<T> implements DataChunk<T> {
 	}
 
 	private T updateTrackersRemove(T object, int x, int y, int z) {
+		if(object == null) return null;
+		x&=15;
+		z&=15;
 		for (BlockTracker<T> tracker : this.trackers) {
 			tracker.remove(x, y, z, object);
 		}
@@ -52,6 +55,9 @@ public abstract class AbstractDataChunk<T> implements DataChunk<T> {
 	}
 
 	private void updateTrackersSet(T object, int x, int y, int z) {
+		if(object == null) return;
+		x&=15;
+		z&=15;
 		for (BlockTracker<T> tracker : this.trackers) {
 			tracker.set(x, y, z, object);
 		}
