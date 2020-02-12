@@ -1,4 +1,4 @@
-package net.devtech.asyncore.blocks.core;
+package net.devtech.asyncore.blocks;
 
 import org.bukkit.World;
 

@@ -2,6 +2,9 @@ package net.devtech.asyncore.world.chunk;
 
 import java.util.function.Supplier;
 
+/**
+ * a null chunk
+ */
 public class EmptyChunk<T> implements DataChunk<T> {
 	private final T _null;
 	public EmptyChunk(T _null) {

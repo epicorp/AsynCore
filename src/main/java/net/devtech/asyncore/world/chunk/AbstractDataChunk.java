@@ -6,19 +6,27 @@ import java.util.function.Supplier;
 
 /**
  * must implement your own serializer, and it must serialize the trackers as well!
- *
- * @param <T>
+ * @param <T> the data type
  */
 public abstract class AbstractDataChunk<T> implements DataChunk<T> {
 	protected final List<BlockTracker<T>> trackers = new ArrayList<>();
 	private boolean isLoaded = true;
+
+	/**
+	 * set the object at the location and return the old one
+	 */
 	protected abstract T put(T _new, int x, int y, int z);
+
+	/**
+	 * set the object
+	 */
 	protected abstract T computeIfAbsent(Supplier<T> obj, int x, int y, int z);
 
 	@Override
 	public T getAndSet(int x, int y, int z, T _new) {
+		T old = this.updateTrackersRemove(this.put(_new, x, y, z), x, y, z);
 		this.updateTrackersSet(_new, x, y, z);
-		return this.updateTrackersRemove(this.put(_new, x, y, z), x, y, z);
+		return old;
 	}
 
 	@Override

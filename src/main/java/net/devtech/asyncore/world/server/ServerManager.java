@@ -21,6 +21,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
+/**
+ * this is the standard server manager, the default implementation of {@link ServerAccess}
+ * @param <T>
+ */
 public class ServerManager<T> implements Listener, ServerAccess<T> {
 	private final ExecutorService service = Executors.newFixedThreadPool(AsynCoreConfig.threads);
 	private Map<WorldRef, WorldContainer<T>> worlds = new ConcurrentHashMap<>();

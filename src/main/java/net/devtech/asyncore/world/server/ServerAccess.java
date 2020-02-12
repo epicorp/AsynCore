@@ -2,11 +2,13 @@ package net.devtech.asyncore.world.server;
 
 import net.devtech.asyncore.world.chunk.DataChunk;
 import net.devtech.utilib.functions.QuadConsumer;
-import net.devtech.utilib.functions.QuadFunction;
 import org.bukkit.Location;
 import org.bukkit.World;
 import java.util.function.Supplier;
 
+/**
+ * this class provides access to the custom world object system, you can set and destroy objects and get chunks
+ */
 public interface ServerAccess<T> {
 
 	/**

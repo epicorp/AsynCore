@@ -48,7 +48,9 @@ public class CustomBlockDataChunk extends AbstractDataChunk<Object> {
 
 		int trackers = input.readInt();
 		for (int i = 0; i < trackers; i++) {
-			this.trackers.add((BlockTracker<Object>) input.readPersistent());
+			BlockTracker<Object> tracker = (BlockTracker<Object>) input.readPersistent();
+			tracker.init(this);
+			this.trackers.add(tracker);
 		}
 
 		this.isLoaded = input.readBoolean();

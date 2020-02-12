@@ -1,7 +1,10 @@
-package net.devtech.asyncore.blocks.events;
+package net.devtech.asyncore.blocks.world.events;
 
 import java.lang.annotation.*;
 
+/**
+ * annotates a method that listens to an event
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface LocalEvent {

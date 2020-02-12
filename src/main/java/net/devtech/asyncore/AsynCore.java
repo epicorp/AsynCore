@@ -1,9 +1,11 @@
 package net.devtech.asyncore;
 
-import net.devtech.asyncore.blocks.world.CustomBlockDataChunk;
-import net.devtech.asyncore.blocks.world.CustomBlockServer;
-import net.devtech.asyncore.blocks.world.CustomServerAccess;
+import net.devtech.asyncore.blocks.world.*;
+import net.devtech.asyncore.blocks.world.events.LocalEventManager;
 import net.devtech.asyncore.commands.TestExecutor;
+import net.devtech.asyncore.items.CanInteractWith;
+import net.devtech.asyncore.items.CanPlace;
+import net.devtech.asyncore.items.ItemEventManager;
 import net.devtech.asyncore.testing.TestBlock;
 import net.devtech.asyncore.util.ref.WorldRef;
 import net.devtech.yajslib.persistent.AnnotatedPersistent;
@@ -12,7 +14,11 @@ import net.devtech.yajslib.persistent.SimplePersistentRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
@@ -22,12 +28,14 @@ public final class AsynCore extends JavaPlugin implements Listener {
 	public static AsynCore instance;
 	private static CustomBlockServer manager;
 	public static CustomServerAccess mainAccess;
-
+	public static ItemEventManager items;
+	public static BukkitEventManager bukkitEventManager;
 	static {
-		// TODO YAJSLib should use default constructor, not unsafe alloc
 		PERSISTENT_REGISTRY.register(CustomBlockDataChunk.class, new AnnotatedPersistent<>(CustomBlockDataChunk::new, CustomBlockDataChunk.class, 9072059811478052715L));
 		PERSISTENT_REGISTRY.register(WorldRef.class, new WorldRef.WorldRefPersistent());
-		PERSISTENT_REGISTRY.register(TestBlock.class, new AnnotatedPersistent<>(TestBlock.class, 2341234556789L));
+		PERSISTENT_REGISTRY.register(TestBlock.class, new AnnotatedPersistent<>(() -> new TestBlock(PERSISTENT_REGISTRY, manager), TestBlock.class, 2341234556789L));
+		PERSISTENT_REGISTRY.register(LocalEventManager.class, new AnnotatedPersistent<>(LocalEventManager::new, LocalEventManager.class, 765435676545L));
+		PERSISTENT_REGISTRY.register(ChunkTicker.class, new AnnotatedPersistent<>(ChunkTicker::new, ChunkTicker.class, 4734325434254L));
 	}
 
 	@Override
@@ -47,16 +55,21 @@ public final class AsynCore extends JavaPlugin implements Listener {
 			this.getLogger().severe("error in loading config!");
 			throw new RuntimeException(e);
 		}
-		
+
 		File file = new File(this.getDataFolder(), AsynCoreConfig.worldDir);
 		manager = new CustomBlockServer(file, null /* maybe some special null block here?*/);
 		mainAccess = manager;
 		Bukkit.getPluginManager().registerEvents(manager, this);
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
 			manager.tick(); // tick server
-		}, 4, AsynCoreConfig.ticks);
-		this.getLogger().info("AsynCore has been loaded!");
+		}, 0, AsynCoreConfig.ticks);
 		this.getCommand("test").setExecutor(new TestExecutor());
+		bukkitEventManager = new BukkitEventManager(manager, this);
+		bukkitEventManager.addBlockConverter(BlockBreakEvent.class, BlockBreakEvent::getBlock);
+		items = new ItemEventManager(this, PERSISTENT_REGISTRY);
+		items.register(BlockPlaceEvent.class, BlockPlaceEvent::getItemInHand, c -> c instanceof CanPlace, CanPlace::place, EventPriority.NORMAL, false);
+		items.register(PlayerInteractEvent.class, PlayerInteractEvent::getItem, c -> c instanceof CanInteractWith, CanInteractWith::interact, EventPriority.NORMAL, false);
+		this.getLogger().info("AsynCore has been loaded!");
 	}
 
 	@Override
