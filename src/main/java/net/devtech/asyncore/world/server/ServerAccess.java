@@ -33,16 +33,14 @@ public interface ServerAccess<T> {
 	}
 
 	/**
-	 * removes the object at the given location and returns it
+	 * remove the object at the given location and returns it
 	 */
-	default T remove(World world, int x, int y, int z) {
-		return this.getAndSet(world, x, y, z, null);
-	}
+	T remove(World world, int x, int y, int z);
 
 	/**
 	 * @see #setIfVacant(World, int, int, int, Supplier)
 	 */
-	default boolean setIVacant(Location location, Supplier<T> objectSupplier) {
+	default boolean setIfVacant(Location location, Supplier<T> objectSupplier) {
 		return this.setIfVacant(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), objectSupplier);
 	}
 

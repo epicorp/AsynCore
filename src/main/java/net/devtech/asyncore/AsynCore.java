@@ -34,7 +34,6 @@ public final class AsynCore extends JavaPlugin implements Listener {
 	public static ItemEventManager items;
 	public static BukkitEventManager bukkitEventManager;
 	static {
-		// manager is somehow null when reload
 		PERSISTENT_REGISTRY.register(TestBlock.class, new AnnotatedPersistent<>(() -> new TestBlock(PERSISTENT_REGISTRY, mainAccess), TestBlock.class, 2341234556789L));
 		PERSISTENT_REGISTRY.register(CustomBlockDataChunk.class, new AnnotatedPersistent<>(CustomBlockDataChunk::new, CustomBlockDataChunk.class, 9072059811478052715L));
 		PERSISTENT_REGISTRY.register(WorldRef.class, new WorldRef.WorldRefPersistent());
@@ -68,8 +67,12 @@ public final class AsynCore extends JavaPlugin implements Listener {
 			mainAccess.tick(); // tick server
 		}, 0, AsynCoreConfig.ticks);
 		this.getCommand("test").setExecutor(new TestExecutor());
+
+		// blocks
 		bukkitEventManager = new BukkitEventManager(mainAccess, this);
 		bukkitEventManager.addBlockConverter(BlockBreakEvent.class, BlockBreakEvent::getBlock);
+		// items
+
 		items = new ItemEventManager(this, PERSISTENT_REGISTRY);
 		items.register(BlockPlaceEvent.class, BlockPlaceEvent::getItemInHand, c -> c instanceof CanPlace, CanPlace::place, EventPriority.NORMAL, false);
 		items.register(PlayerInteractEvent.class, PlayerInteractEvent::getItem, c -> c instanceof CanInteractWith, CanInteractWith::interact, EventPriority.NORMAL, false);

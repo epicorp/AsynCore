@@ -19,7 +19,6 @@ public abstract class BlockItem implements CanPlace, CanInteractWith, CustomItem
 	protected final ServerAccess<CustomBlock> access;
 	protected final PersistentRegistry registry;
 	protected BlockItem(PersistentRegistry registry, ServerAccess<CustomBlock> access) {
-		System.out.println("uyrfiudjmskfreiudkyuedjs " + access);
 		this.access = access;
 		this.registry = registry;
 	}
@@ -36,21 +35,19 @@ public abstract class BlockItem implements CanPlace, CanInteractWith, CustomItem
 	// these have priorities so you can cancel them early
 	@LocalEvent
 	private void _break(BlockBreakEvent event) {
-		System.out.println(event.getBlock().getLocation());
+		Block block = event.getBlock();
+		Location location = block.getLocation();
 		if(this.shouldDropItem() && !event.isCancelled()) {
 			event.setDropItems(false);
-			Block block = event.getBlock();
-			Location location = block.getLocation();
 			block.getWorld().dropItemNaturally(location, CustomItemFactory.wrap(this.registry, this));
-			System.out.println("bruh"+ this.access);
-			this.access.remove(location);
 		}
+		this.access.remove(location);
 	}
 
 	// item events
 	@Override
 	public void place(BlockPlaceEvent event) {
-		if(!this.access.setIVacant(event.getBlock().getLocation(), () -> this)) {
+		if(!this.access.setIfVacant(event.getBlock().getLocation(), () -> this)) {
 			event.setCancelled(true);
 		}
 	}
@@ -61,7 +58,7 @@ public abstract class BlockItem implements CanPlace, CanInteractWith, CustomItem
 		if(action == Action.RIGHT_CLICK_BLOCK) {
 			Block block = event.getClickedBlock().getRelative(event.getBlockFace());
 			if(!block.getType().isSolid()) {
-				if(this.access.setIVacant(block.getLocation(), () -> this)) {
+				if(this.access.setIfVacant(block.getLocation(), () -> this)) {
 					event.getItem().setAmount(event.getItem().getAmount()-1);
 				}
 			}

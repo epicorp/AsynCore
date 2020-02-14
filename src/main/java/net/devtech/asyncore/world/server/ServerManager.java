@@ -92,6 +92,11 @@ public class ServerManager<T> implements Listener, ServerAccess<T> {
 	}
 
 	@Override
+	public T remove(World world, int x, int y, int z) {
+		return this.worlds.get(new WorldRef(world)).remove(x, y, z);
+	}
+
+	@Override
 	public boolean setIfVacant(World world, int x, int y, int z, Supplier<T> objectSupplier) {
 		return this.worlds.get(new WorldRef(world)).setIfVacant(x, y, z, objectSupplier);
 	}

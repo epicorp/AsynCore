@@ -72,7 +72,8 @@ public class WorldContainer<T> {
 	 * remove the object at the location
 	 */
 	public T remove(int x, int y, int z) {
-		return this.getAndSet(x, y, z, null);
+		int cx = x >> 4, cz = z >> 4;
+		return this.chunks.getOrDefault((long) cx << 32 | cz & 0xFFFFFFFFL, this.emptyChunk).getAndRemove(x, y, z);
 	}
 
 	/**

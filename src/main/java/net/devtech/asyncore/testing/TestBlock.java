@@ -14,6 +14,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import java.io.IOException;
 
@@ -35,16 +36,6 @@ public class TestBlock extends BlockItem implements Tickable, LocalListener {
 		return stack;
 	}
 
-	@Reader(2341234556789L)
-	public final void read(PersistentInput input) throws IOException {
-		this.i = input.readInt();
-	}
-
-	@Writer(2341234556789L)
-	public final void write(PersistentOutput output) throws IOException {
-		output.writeInt(this.i);
-	}
-
 	@Override
 	public void place(World world, int x, int y, int z) {
 		Bukkit.broadcastMessage(String.format("I'm at %d %d %d in %s and my 'i' is %d\n", x, y, z, world, this.i++));
@@ -54,5 +45,15 @@ public class TestBlock extends BlockItem implements Tickable, LocalListener {
 	@Override
 	public void destroy(World world, int x, int y, int z) {
 		System.out.println("ohno");
+	}
+
+	@Reader(2341234556789L)
+	public final void read(PersistentInput input) throws IOException {
+		this.i = input.readInt();
+	}
+
+	@Writer(2341234556789L)
+	public final void write(PersistentOutput output) throws IOException {
+		output.writeInt(this.i);
 	}
 }

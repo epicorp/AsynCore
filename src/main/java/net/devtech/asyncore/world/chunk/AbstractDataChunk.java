@@ -6,38 +6,45 @@ import java.util.function.Supplier;
 
 /**
  * must implement your own serializer, and it must serialize the trackers as well!
+ *
  * @param <T> the data type
  */
 public abstract class AbstractDataChunk<T> implements DataChunk<T> {
+	private static final Object DUMMY_OBJECT = new Object();
 	protected final List<BlockTracker<T>> trackers = new ArrayList<>();
 	private boolean isLoaded = true;
 
 	/**
 	 * set the object at the location and return the old one
 	 */
-	protected abstract T put(T _new, int x, int y, int z);
+	protected abstract T getAndPut(T _new, int x, int y, int z);
 
 	/**
-	 * set the object
+	 * remove the object at the location and return the old one
+	 */
+	protected abstract T remove(int x, int y, int z);
+
+	/**
+	 * set the object if any only if there is not already an object there
 	 */
 	protected abstract T computeIfAbsent(Supplier<T> obj, int x, int y, int z);
 
 	@Override
 	public T getAndSet(int x, int y, int z, T _new) {
-		T old = this.updateTrackersRemove(this.put(_new, x, y, z), x, y, z);
+		T old = this.updateTrackersRemove(this.getAndPut(_new, x, y, z), x, y, z);
 		this.updateTrackersSet(_new, x, y, z);
 		return old;
 	}
 
 	@Override
 	public T getAndRemove(int x, int y, int z) {
-		return this.updateTrackersRemove(this.put(null, x, y, z), x, y, z);
+		return this.updateTrackersRemove(this.remove(x, y, z), x, y, z);
 	}
 
 	@SuppressWarnings ("unchecked")
 	@Override
 	public boolean setOrAbort(int x, int y, int z, Supplier<T> object) {
-		Object[] ref = {null};
+		Object[] ref = {DUMMY_OBJECT};
 		T returned = this.computeIfAbsent(() -> (T) (ref[0] = object.get()), x, y, z);
 		boolean set = ref[0] == returned;
 		if (set) this.updateTrackersSet(returned, x, y, z);
@@ -45,9 +52,9 @@ public abstract class AbstractDataChunk<T> implements DataChunk<T> {
 	}
 
 	private T updateTrackersRemove(T object, int x, int y, int z) {
-		if(object == null) return null;
-		x&=15;
-		z&=15;
+		if (object == null) return null;
+		x &= 15;
+		z &= 15;
 		for (BlockTracker<T> tracker : this.trackers) {
 			tracker.remove(x, y, z, object);
 		}
@@ -55,9 +62,9 @@ public abstract class AbstractDataChunk<T> implements DataChunk<T> {
 	}
 
 	private void updateTrackersSet(T object, int x, int y, int z) {
-		if(object == null) return;
-		x&=15;
-		z&=15;
+		if (object == null) return;
+		x &= 15;
+		z &= 15;
 		for (BlockTracker<T> tracker : this.trackers) {
 			tracker.set(x, y, z, object);
 		}

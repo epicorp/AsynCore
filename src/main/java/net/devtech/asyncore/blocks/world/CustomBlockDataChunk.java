@@ -14,7 +14,6 @@ import net.devtech.yajslib.io.PersistentOutput;
 import java.io.IOException;
 import java.util.function.Supplier;
 
-// TODO: fix bug where reloading server causes glitch block that drops infinite items
 public class CustomBlockDataChunk extends AbstractDataChunk<CustomBlock> {
 	private final Short2ObjectMap<CustomBlock> data = new Short2ObjectOpenHashMap<>();
 	private boolean isLoaded = true;
@@ -28,12 +27,18 @@ public class CustomBlockDataChunk extends AbstractDataChunk<CustomBlock> {
 	public CustomBlockDataChunk() {}
 
 	@Override
-	protected CustomBlock put(CustomBlock _new, int x, int y, int z) {
+	protected CustomBlock getAndPut(CustomBlock _new, int x, int y, int z) {
 		if(_new != null)
 			_new.place(this.ref.get(), x, y, z);
-		else
-			System.out.printf("%d %d %d\n", x, y, z);
 		CustomBlock old = this.data.put((short) ((x & 15) | (z & 15) << 4 | y << 8), _new);
+		if(old != null)
+			old.destroy(this.ref.get(), x, y, z);
+		return old;
+	}
+
+	@Override
+	protected CustomBlock remove(int x, int y, int z) {
+		CustomBlock old = this.data.remove((short) ((x & 15) | (z & 15) << 4 | y << 8));
 		if(old != null)
 			old.destroy(this.ref.get(), x, y, z);
 		return old;

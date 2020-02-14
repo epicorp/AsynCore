@@ -1,8 +1,6 @@
 package net.devtech.testing;
 
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntIterator;
+import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectMap;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 import java.util.Iterator;
@@ -15,10 +13,10 @@ public class MapTest {
 		//int upcast = 0xffff & pack;
 		System.out.printf("%d %d %d\n", pack & 15, (pack >> 4) & 15, ((pack & 0xffff) >> 8));
 
-		Int2IntMap map = new Int2IntOpenHashMap();
-		map.put(0, 0);
-		map.put(1, 1);
-		map.put(2, 2);
+		Int2ObjectMap<Integer> map = new Int2ObjectOpenHashMap<>();
+		map.put(0, null);
+		map.put(1, null);
+		map.put(2, null);
 		System.out.println(map);
 		map.forEach(map::remove);
 		System.out.println(map);
