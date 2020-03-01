@@ -1,5 +1,6 @@
 package net.devtech.asyncore.world.chunk;
 
+import org.bukkit.World;
 import java.util.function.Supplier;
 
 /**
@@ -61,4 +62,6 @@ public interface DataChunk<T> {
 	 * @return the tracker
 	 */
 	BlockTracker<T> getTracker(int key);
+
+	World getWorld();
 }

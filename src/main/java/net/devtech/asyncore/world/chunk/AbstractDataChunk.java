@@ -12,12 +12,12 @@ import java.util.function.Supplier;
 public abstract class AbstractDataChunk<T> implements DataChunk<T> {
 	private static final Object DUMMY_OBJECT = new Object();
 	protected final List<BlockTracker<T>> trackers = new ArrayList<>();
-	private boolean isLoaded = true;
+	protected boolean isLoaded = true;
 
 	/**
 	 * set the object at the location and return the old one
 	 */
-	protected abstract T getAndPut(T _new, int x, int y, int z);
+	protected abstract T getAndReplace(T _new, int x, int y, int z);
 
 	/**
 	 * remove the object at the location and return the old one
@@ -31,7 +31,7 @@ public abstract class AbstractDataChunk<T> implements DataChunk<T> {
 
 	@Override
 	public T getAndSet(int x, int y, int z, T _new) {
-		T old = this.updateTrackersRemove(this.getAndPut(_new, x, y, z), x, y, z);
+		T old = this.updateTrackersRemove(this.getAndReplace(_new, x, y, z), x, y, z);
 		this.updateTrackersSet(_new, x, y, z);
 		return old;
 	}
@@ -56,17 +56,15 @@ public abstract class AbstractDataChunk<T> implements DataChunk<T> {
 		x &= 15;
 		z &= 15;
 		for (BlockTracker<T> tracker : this.trackers) {
-			tracker.remove(x, y, z, object);
+			tracker.remove(object, x, y, z);
 		}
 		return object;
 	}
 
 	private void updateTrackersSet(T object, int x, int y, int z) {
 		if (object == null) return;
-		x &= 15;
-		z &= 15;
 		for (BlockTracker<T> tracker : this.trackers) {
-			tracker.set(x, y, z, object);
+			tracker.set(object, x, y, z);
 		}
 	}
 
@@ -88,6 +86,7 @@ public abstract class AbstractDataChunk<T> implements DataChunk<T> {
 	@Override
 	public int addTracker(BlockTracker<T> tracker) {
 		this.trackers.add(tracker);
+		tracker.init(this);
 		return this.trackers.size() - 1;
 	}
 }

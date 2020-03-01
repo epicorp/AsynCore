@@ -1,5 +1,6 @@
 package net.devtech.asyncore.util.ref;
 
+import net.devtech.yajslib.annotations.DependsOn;
 import net.devtech.yajslib.io.PersistentInput;
 import net.devtech.yajslib.io.PersistentInputStream;
 import net.devtech.yajslib.io.PersistentOutput;
@@ -10,26 +11,27 @@ import org.bukkit.World;
 import java.io.IOException;
 import java.util.UUID;
 
-public class WorldRef extends BukkitRef<World, UUID> {
+
+public class WorldRef extends BukkitRef<World, String> {
 	public WorldRef(World object) {
 		super(object);
 	}
 
-	public WorldRef(UUID object, boolean conflictingParam) {
+	public WorldRef(String object, boolean conflictingParam) {
 		super(object, conflictingParam);
 	}
 
 	@Override
-	protected World from(UUID internal) {
+	protected World from(String internal) {
 		return Bukkit.getWorld(internal);
 	}
 
 	@Override
-	protected UUID to(World object) {
-		return object.getUID();
+	protected String to(World object) {
+		return object.getName();
 	}
 
-
+	@DependsOn(String.class)
 	public static class WorldRefPersistent implements Persistent<WorldRef> {
 
 		@Override
@@ -39,12 +41,12 @@ public class WorldRef extends BukkitRef<World, UUID> {
 
 		@Override
 		public void write(WorldRef ref, PersistentOutput output) throws IOException {
-			output.writeUUID(ref.internal);
+			output.writePersistent(ref.internal);
 		}
 
 		@Override
 		public WorldRef read(PersistentInput input) throws IOException {
-			return new WorldRef(input.readUUID(), false);
+			return new WorldRef((String) input.readPersistent(), false);
 		}
 
 		@Override

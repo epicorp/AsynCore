@@ -2,16 +2,20 @@ package net.devtech.asyncore.blocks.world.events;
 
 import it.unimi.dsi.fastutil.shorts.Short2ObjectMap;
 import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
-import net.devtech.asyncore.blocks.CustomBlock;
+import net.devtech.asyncore.blocks.events.DestroyEvent;
+import net.devtech.asyncore.blocks.events.PlaceEvent;
 import net.devtech.asyncore.world.chunk.BlockTracker;
 import net.devtech.asyncore.world.chunk.DataChunk;
 import net.devtech.utilib.functions.ThrowingConsumer;
 import net.devtech.utilib.functions.TriConsumer;
+import net.devtech.utilib.functions.TriFunction;
 import net.devtech.utilib.structures.inheritance.InheritedMap;
 import net.devtech.yajslib.annotations.Reader;
 import net.devtech.yajslib.annotations.Writer;
 import net.devtech.yajslib.io.PersistentInput;
 import net.devtech.yajslib.io.PersistentOutput;
+import org.bukkit.World;
+import org.bukkit.event.Cancellable;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -22,33 +26,36 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * manages events for a chunk
+ * manages per block events for a chunk
  */
-public class LocalEventManager implements BlockTracker<CustomBlock> {
+public class LocalEventManager implements BlockTracker<Object> {
 	private static final Map<Class<?>, TriConsumer<LocalEventManager, Object, Short>> REFLECTION_CACHE = new ConcurrentHashMap<>();
-
 	private static final Map<Class<?>, List<Consumer<?>>[]> DUMMY_MAP = Collections.emptyMap();
 	private static final Logger LOGGER = Logger.getLogger("LocalEventManager");
 	private static final InheritedMap<Object, Method> METHODS = InheritedMap.getMethods(Object.class);
 	private final Short2ObjectMap<Map<Class<?>, List<Consumer<?>>[]>> listenerMap = new Short2ObjectOpenHashMap<>();
 
 	@Override
-	public void init(DataChunk<CustomBlock> chunk) {
+	public void init(DataChunk<Object> chunk) {
 		for (short pack : this.listenerMap.keySet()) { // filled with dummy maps
 			int x = pack & 15, z = (pack >> 4) & 15, y = ((pack & 0xffff) >> 8);
-			this.listenerMap.remove(pack);
-			this.set(x, y, z, chunk.get(x, y, z));
+			this.listenerMap.remove(pack); // remove dummy
+			Object object = chunk.get(x, y, z);
+			// set without notifying listeners
+			REFLECTION_CACHE.computeIfAbsent(object.getClass(), LocalEventManager::compute).accept(this, object, pack);
 		}
 	}
 
 	@Override
-	public void set(int x, int y, int z, CustomBlock object) {
-		REFLECTION_CACHE.computeIfAbsent(object.getClass(), LocalEventManager::compute).accept(this, object, (short) (x | z << 4 | y << 8));
+	public void set(Object object, int x, int y, int z) {
+		short key = (short) ((x & 15) | (z & 15) << 4 | y << 8);
+		REFLECTION_CACHE.computeIfAbsent(object.getClass(), LocalEventManager::compute).accept(this, object, key);
 	}
 
 	@Override
-	public void remove(int x, int y, int z, CustomBlock object) {
-		this.listenerMap.remove((short) (x | z << 4 | y << 8));
+	public void remove(Object object, int x, int y, int z) {
+		short key = (short) ((x & 15) | (z & 15) << 4 | y << 8);
+		this.listenerMap.remove(key);
 	}
 
 	/**
@@ -59,7 +66,6 @@ public class LocalEventManager implements BlockTracker<CustomBlock> {
 	 */
 	@SuppressWarnings ({"unchecked", "rawtypes"})
 	public void invoke(short key, Object event) {
-		System.out.println(key + " " + this.listenerMap);
 		Map<Class<?>, List<Consumer<?>>[]> arr = this.listenerMap.get(key);
 		if (arr != null) {
 			List<Consumer<?>>[] listeners = arr.get(event.getClass());
@@ -68,6 +74,8 @@ public class LocalEventManager implements BlockTracker<CustomBlock> {
 					if (listener != null) {
 						for (Consumer consumer : listener) {
 							consumer.accept(event);
+							if(event instanceof Cancellable && ((Cancellable) event).isCancelled())
+								return; // exit if cancellable
 						}
 					}
 				}
@@ -76,7 +84,16 @@ public class LocalEventManager implements BlockTracker<CustomBlock> {
 	}
 
 	public void invoke(int x, int y, int z, Object object) {
-		this.invoke((short) (x | z << 4 | y << 8), object);
+		this.invoke((short) ((x & 15) | (z & 15) << 4 | y << 8), object);
+	}
+
+	public void invokeAll(TriFunction<Integer, Integer, Integer, Object> eventFunction) {
+		for (Short2ObjectMap.Entry<Map<Class<?>, List<Consumer<?>>[]>> entry : this.listenerMap.short2ObjectEntrySet()) {
+			short pack = entry.getShortKey();
+			int x = pack & 15, z = (pack >> 4) & 15, y = ((pack & 0xffff) >> 8);
+			Object event = eventFunction.apply(x, y, z);
+			this.invoke(pack, event);
+		}
 	}
 
 	private static TriConsumer<LocalEventManager, Object, Short> compute(Class<?> type) {

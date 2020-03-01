@@ -1,7 +1,7 @@
 package net.devtech.asyncore.blocks.world.events;
 
-import net.devtech.asyncore.blocks.world.CustomServerAccess;
 import net.devtech.asyncore.util.ListUtil;
+import net.devtech.asyncore.world.server.ServerAccess;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -16,12 +16,12 @@ import java.util.function.Function;
  * for using bukkit events with custom blocks
  */
 @SuppressWarnings ("unchecked")
-public class BukkitEventManager {
+public class BlockEventManager {
 	private static final Listener DUMMY = new Listener() {};
-	private final CustomServerAccess access;
+	private final ServerAccess<Object> access;
 	private final Plugin plugin;
 
-	public BukkitEventManager(CustomServerAccess access, Plugin plugin) {
+	public BlockEventManager(ServerAccess<Object> access, Plugin plugin) {
 		this.access = access;
 		this.plugin = plugin;
 	}
@@ -38,7 +38,7 @@ public class BukkitEventManager {
 		this.addMultiLocationConverter(eventType, e -> ListUtil.mapToList(converter.apply(e), Block::getLocation), priority, ignoreCancelled);
 	}
 
-	public  <E extends Event> void addMultiLocationConverter(Class<E> event, Function<E, Collection<Location>> converter) {
+	public <E extends Event> void addMultiLocationConverter(Class<E> event, Function<E, Collection<Location>> converter) {
 		this.addMultiLocationConverter(event, converter, EventPriority.NORMAL, false);
 	}
 
@@ -47,18 +47,24 @@ public class BukkitEventManager {
 	}
 
 	public <E extends Event> void addLocationConverter(Class<E> eventType, Function<E, Location> converter, EventPriority priority, boolean ignoreCancelled) {
-		Bukkit.getPluginManager().registerEvent(eventType, DUMMY, priority, (listener, event) -> this.access.invoke(converter.apply((E) event), event), this.plugin, ignoreCancelled);
+		Bukkit.getPluginManager().registerEvent(eventType, DUMMY, priority, (listener, event) -> {
+			Location location = converter.apply((E) event);
+			if (location != null) this.access.invoke(location, event);
+		}, this.plugin, ignoreCancelled);
 	}
 
 	public <E extends Event> void addBlockConverter(Class<E> eventType, Function<E, Block> converter, EventPriority priority, boolean ignoreCancelled) {
-		this.addLocationConverter(eventType, e -> converter.apply(e).getLocation(), priority, ignoreCancelled);
+		this.addLocationConverter(eventType, e -> {
+			Block block = converter.apply(e);
+			return block != null ? block.getLocation() : null;
+		}, priority, ignoreCancelled);
 	}
 
-	public  <E extends Event> void addLocationConverter(Class<E> event, Function<E, Location> converter) {
+	public <E extends Event> void addLocationConverter(Class<E> event, Function<E, Location> converter) {
 		this.addLocationConverter(event, converter, EventPriority.NORMAL, false);
 	}
 
 	public <E extends Event> void addBlockConverter(Class<E> event, Function<E, Block> converter) {
-		this.addLocationConverter(event, e -> converter.apply(e).getLocation());
+		this.addBlockConverter(event, converter, EventPriority.NORMAL, false);
 	}
 }

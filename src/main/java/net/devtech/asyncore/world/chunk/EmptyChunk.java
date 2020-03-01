@@ -1,5 +1,7 @@
 package net.devtech.asyncore.world.chunk;
 
+import org.bukkit.Bukkit;
+import org.bukkit.World;
 import java.util.function.Supplier;
 
 /**
@@ -52,5 +54,10 @@ public class EmptyChunk<T> implements DataChunk<T> {
 	@Override
 	public BlockTracker<T> getTracker(int key) {
 		return null;
+	}
+
+	@Override
+	public World getWorld() {
+		return Bukkit.getWorlds().get(0);
 	}
 }

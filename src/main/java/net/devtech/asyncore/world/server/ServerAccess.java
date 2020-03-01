@@ -1,5 +1,7 @@
 package net.devtech.asyncore.world.server;
 
+import net.devtech.asyncore.blocks.events.LocatedEvent;
+import net.devtech.asyncore.blocks.events.PlaceEvent;
 import net.devtech.asyncore.world.chunk.DataChunk;
 import net.devtech.utilib.functions.QuadConsumer;
 import org.bukkit.Location;
@@ -11,6 +13,49 @@ import java.util.function.Supplier;
  */
 public interface ServerAccess<T> {
 
+	default void invoke(LocatedEvent event) {
+		this.invoke(event.getLocation(), event);
+	}
+
+	default void invoke(Location location, Object event) {
+		this.invoke(event, location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
+	}
+
+	/**
+	 * add the object to the world if there is an open spot,
+	 * and then invoke a place event on it
+	 */
+	default boolean addIfVacant(Location location, Supplier<T> object) {
+		boolean set = this.setIfVacant(location, object);
+		if(set) this.invoke(location, new PlaceEvent(location));
+		return set;
+	}
+
+	/**
+	 * add the object to the world and invoke a place event on it
+	 */
+	default T add(Location location, T object) {
+		T set = this.getAndSet(location, object);
+		this.invoke(location, new PlaceEvent(location));
+		return set;
+	}
+
+	void invoke(Object event, World world, int x, int y, int z);
+
+	/**
+	 * queues a removal for a block, this should be executed at the end of a server access tick
+	 * @implNote use {@link ServerAccess#remove(World, int, int, int)} or {@link ServerAccess#remove(Location)}
+	 */
+	void queueRemove(Location location);
+
+	/**
+	 * queues a set for a block, this should be executed at the end of a server access tick
+	 * @implNote use {@link ServerAccess#getAndSet(Location, Object)} or {@link ServerAccess#getAndSet(World, int, int, int, Object)}
+	 */
+	void queueSet(Location location, T object);
+
+	void tick();
+
 	/**
 	 * @see #getAndSet(World, int, int, int, T)
 	 */
@@ -20,7 +65,9 @@ public interface ServerAccess<T> {
 
 	/**
 	 * get the object at the location and set the new one in it's place
-	 *
+	 * this will <b>NOT</b> handle events automatically for you, in
+	 * if you want to call a blocks break and notify that it is being broken, call
+	 * invoke, and make sure to remove the instance inside the destroy event
 	 * @return null if there was no object there before
 	 */
 	T getAndSet(World world, int x, int y, int z, T object);

@@ -29,13 +29,11 @@ dependencies {
     compileOnly 'org.bukkit:bukkit:1.12.2-R0.1-SNAPSHOT'
     compile group: 'it.unimi.dsi', name: 'fastutil', version: '8.3.0'
     compile fileTree(dir: 'libs', include: '*.jar')
-    compileOnly fileTree(dir: 'sources', include: '*.jar')
-    compile group: 'org.apache.commons', name: 'commons-compress', version: '1.19'
     compile "de.tr7zw:item-nbt-api:2.2.0"
+    compileOnly group: 'org.jetbrains', name: 'annotations', version: '19.0.0'
 }
 
 shadowJar {
-    relocate 'io.papermc.lib', "${pluginGroup}.${pluginName}.paperlib"
     relocate 'de.tr7zw.changeme.nbtapi', "${pluginGroup}.${pluginName}.nbtapi"
     destinationDir = 'run/plugins' as File
 }

@@ -1,22 +1,31 @@
 package net.devtech.asyncore.util.ref;
 
+import java.lang.ref.WeakReference;
+
 /**
  * for holding safe references to bukkit objects
  * @param <T> the type that's being references
  * @param <I> an internal type that is safe to reference
  */
 public abstract class BukkitRef<T, I> {
+	protected WeakReference<T> cache;
 	protected I internal;
 	public BukkitRef(T object) {
+		this.cache = new WeakReference<>(object);
 		this.internal = this.to(object);
 	}
 
 	public BukkitRef(I object, boolean conflictingParam /*so constructor sigs do not conflic*/) {
+		this.cache = new WeakReference<>(this.from(object));
 		this.internal = object;
 	}
 
 	public T get() {
-		return this.from(this.internal);
+		T type = this.cache.get();
+		if(type == null) {
+			this.cache = new WeakReference<>(type = this.from(this.internal));
+		}
+		return type;
 	}
 
 	protected abstract T from(I internal);

@@ -4,9 +4,11 @@ import net.devtech.asyncore.AsynCoreConfig;
 import net.devtech.asyncore.util.ref.WorldRef;
 import net.devtech.asyncore.world.WorldContainer;
 import net.devtech.asyncore.world.chunk.DataChunk;
+import net.devtech.utilib.duples.Pair;
 import net.devtech.utilib.functions.QuadConsumer;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,10 +17,13 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import java.io.File;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -26,7 +31,7 @@ import java.util.function.Supplier;
  * this is the standard server manager, the default implementation of {@link ServerAccess}
  * @param <T>
  */
-public class ServerManager<T> implements Listener, ServerAccess<T> {
+public abstract class ServerManager<T> implements Listener, ServerAccess<T> {
 	private final ExecutorService service = Executors.newFixedThreadPool(AsynCoreConfig.threads);
 	private Map<WorldRef, WorldContainer<T>> worlds = new ConcurrentHashMap<>();
 	private final File worldDir;
@@ -83,6 +88,30 @@ public class ServerManager<T> implements Listener, ServerAccess<T> {
 			for (Chunk chunk : world.getLoadedChunks()) {
 				container.unloadChunk(chunk.getX(), chunk.getZ());
 			}
+		}
+	}
+
+	private Queue<Location> removals = new LinkedList<>();
+
+	@Override
+	public void queueRemove(Location location) {
+		this.removals.add(location);
+	}
+
+	private Queue<Pair<Location, T>> sets = new LinkedList<>();
+
+	@Override
+	public void queueSet(Location location, T object) {
+		this.sets.add(new Pair<>(location, object));
+	}
+
+	@Override
+	public void tick() {
+		while (!this.removals.isEmpty())
+			this.remove(this.removals.poll());
+		while (!this.sets.isEmpty()) {
+			Pair<Location, T> set = this.sets.poll();
+			this.getAndSet(set.getA(), set.getB());
 		}
 	}
 

@@ -110,16 +110,17 @@ public class WorldContainer<T> {
 		this.chunkLock.waitFor(x, z, () -> {
 			File chunkFile = new File(this.worldDir, String.format(FILE_PATTERN, x, z));
 			DataChunk<T> chunk = this.chunks.remove((long) x << 32 | z & 0xFFFFFFFFL);
-			if (chunk.isEmpty()) {
+			if (chunk == null || chunk.isEmpty()) {
 				if (chunkFile.exists() && !chunkFile.delete()) {
 					LOGGER.severe("Unable to delete chunk file " + chunkFile);
 				}
 			} else {
+				System.out.println("unloading " + x + " " + z);
 				// TODO zstd compressor stream
 				File parent = chunkFile.getParentFile();
 				if(!parent.exists())
 					parent.mkdirs();
-				try (PersistentOutputStream output = new PersistentOutputStream(new GZIPOutputStream(new FileOutputStream(chunkFile)), AsynCore.PERSISTENT_REGISTRY)) {
+				try (PersistentOutputStream output = new PersistentOutputStream(new GZIPOutputStream(new FileOutputStream(chunkFile)), AsynCore.persistentRegistry)) {
 					chunk.setLoaded(false); // invalidate any old references
 					output.writePersistent(chunk); // this may need a world lock but I don't think it does
 				} catch (IOException e) {
@@ -137,7 +138,7 @@ public class WorldContainer<T> {
 		this.chunkLock.waitFor(x, z, () -> {
 			File chunkFile = new File(this.worldDir, String.format(FILE_PATTERN, x, z));
 			if (chunkFile.exists()) {
-				try (PersistentInputStream input = new PersistentInputStream(new GZIPInputStream(new FileInputStream(chunkFile)), AsynCore.PERSISTENT_REGISTRY)) {
+				try (PersistentInputStream input = new PersistentInputStream(new GZIPInputStream(new FileInputStream(chunkFile)), AsynCore.persistentRegistry)) {
 					Object chunk = input.readPersistent();
 					if (!(chunk instanceof DataChunk)) throw new IOException(chunk + " ohno");
 					this.worldLock.wait(() -> this.chunks.put((long) x << 32 | z & 0xFFFFFFFFL, (DataChunk<T>) chunk));

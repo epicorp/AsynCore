@@ -1,6 +1,6 @@
 package net.devtech.asyncore.items.blocks;
 
-import net.devtech.asyncore.blocks.CustomBlock;
+import net.devtech.asyncore.blocks.events.DestroyEvent;
 import net.devtech.asyncore.blocks.world.events.LocalEvent;
 import net.devtech.asyncore.items.CanInteractWith;
 import net.devtech.asyncore.items.CanPlace;
@@ -15,10 +15,10 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
-public abstract class BlockItem implements CanPlace, CanInteractWith, CustomItem, CustomBlock {
-	protected final ServerAccess<CustomBlock> access;
+public abstract class BlockItem implements CanInteractWith, CustomItem {
+	protected final ServerAccess<Object> access;
 	protected final PersistentRegistry registry;
-	protected BlockItem(PersistentRegistry registry, ServerAccess<CustomBlock> access) {
+	protected BlockItem(PersistentRegistry registry, ServerAccess<Object> access) {
 		this.access = access;
 		this.registry = registry;
 	}
@@ -35,22 +35,22 @@ public abstract class BlockItem implements CanPlace, CanInteractWith, CustomItem
 	// these have priorities so you can cancel them early
 	@LocalEvent
 	private void _break(BlockBreakEvent event) {
+		event.setDropItems(false); // replace with our own
+		this.access.invoke(event.getBlock().getLocation(), new DestroyEvent(event.getBlock().getLocation()));
+	}
+
+	@LocalEvent
+	private void destroy(DestroyEvent event) {
 		Block block = event.getBlock();
 		Location location = block.getLocation();
-		if(this.shouldDropItem() && !event.isCancelled()) {
-			event.setDropItems(false);
+		if(this.shouldDropItem()) {
 			block.getWorld().dropItemNaturally(location, CustomItemFactory.wrap(this.registry, this));
 		}
-		this.access.remove(location);
+		// remove ourselves from the world
+		this.access.remove(event.getLocation());
 	}
 
 	// item events
-	@Override
-	public void place(BlockPlaceEvent event) {
-		if(!this.access.setIfVacant(event.getBlock().getLocation(), () -> this)) {
-			event.setCancelled(true);
-		}
-	}
 
 	@Override
 	public void interact(PlayerInteractEvent event) {
@@ -58,7 +58,7 @@ public abstract class BlockItem implements CanPlace, CanInteractWith, CustomItem
 		if(action == Action.RIGHT_CLICK_BLOCK) {
 			Block block = event.getClickedBlock().getRelative(event.getBlockFace());
 			if(!block.getType().isSolid()) {
-				if(this.access.setIfVacant(block.getLocation(), () -> this)) {
+				if(this.access.addIfVacant(block.getLocation(), () -> this)) {
 					event.getItem().setAmount(event.getItem().getAmount()-1);
 				}
 			}

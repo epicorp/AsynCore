@@ -16,10 +16,10 @@ public interface BlockTracker<T> {
 	/**
 	 * this is called when a new object is set in the location
 	 */
-	void set(int x, int y, int z, T object);
+	void set(T object, int x, int y, int z);
 
 	/**
 	 * this is called when an object is removed from a location
 	 */
-	void remove(int x, int y, int z, T object);
+	void remove(T object, int x, int y, int z);
 }
