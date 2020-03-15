@@ -96,7 +96,7 @@ public class WorldContainer<T> {
 	}
 
 	public void forChunks(TriConsumer<Integer, Integer, DataChunk<T>> forEach) {
-		for (Long2ObjectMap.Entry<DataChunk<T>> entry : Long2ObjectMaps.fastIterable(this.chunks)) {
+		for (Long2ObjectMap.Entry<DataChunk<T>> entry : this.chunks.long2ObjectEntrySet()) {
 			long key = entry.getLongKey();
 			forEach.accept((int) (key >> 32), (int) key, entry.getValue());
 		}

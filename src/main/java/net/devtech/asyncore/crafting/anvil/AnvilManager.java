@@ -2,6 +2,8 @@ package net.devtech.asyncore.crafting.anvil;
 
 import net.devtech.asyncore.crafting.AbstractRecipeManager;
 import net.devtech.asyncore.gui.graphics.GuiManager;
+import net.devtech.asyncore.items.CustomItem;
+import net.devtech.asyncore.items.CustomItemFactory;
 import net.devtech.asyncore.util.inv.Inventories;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;

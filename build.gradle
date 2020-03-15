@@ -33,9 +33,13 @@ dependencies {
     compileOnly group: 'org.jetbrains', name: 'annotations', version: '19.0.0'
 }
 
+
 shadowJar {
-    relocate 'de.tr7zw.changeme.nbtapi', "${pluginGroup}.${pluginName}.nbtapi"
+    from sourceSets.main.java
+    from sourceSets.main.output
     destinationDir = 'run/plugins' as File
+    relocate 'de.tr7zw.changeme.nbtapi', 'net.devtech.tr7zw.nbtapi'
+    relocate 'it.unimi.dsi', 'net.devtech.fastutil'
 }
 
 task validateMain {

@@ -45,4 +45,9 @@ public class PistonEvent extends BlockEvent {
 	public void setDestroyed(boolean processed) {
 		this.destroy = processed;
 	}
+
+	public Location toLocation() {
+		BlockFace face = this.getDirection();
+		return this.getLocation().add(face.getModX(), face.getModY(), face.getModZ());
+	}
 }

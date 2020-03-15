@@ -1,6 +1,7 @@
 package net.devtech.asyncore.testing;
 
 import net.devtech.asyncore.AsynCore;
+import net.devtech.asyncore.blocks.AbstractBlock;
 import net.devtech.asyncore.blocks.custom.HopperExtractable;
 import net.devtech.asyncore.blocks.events.PlaceEvent;
 import net.devtech.asyncore.blocks.events.TickEvent;
@@ -39,7 +40,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
-public class SuperFurnace extends BlockItem implements HopperExtractable {
+public class SuperFurnace extends AbstractBlock implements BlockItem, HopperExtractable {
 	private Inventory display = Bukkit.createInventory(null, 36);
 	private static final ItemStack BACKGROUND = new ItemStack(Material.STONE);
 	private ItemStack[] output = new ItemStack[9];

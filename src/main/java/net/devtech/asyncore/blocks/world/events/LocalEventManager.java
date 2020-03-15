@@ -107,9 +107,6 @@ public class LocalEventManager implements BlockTracker<Object> {
 					throw new IllegalArgumentException(attribute + " does not have the expected method signature!");
 				if (Modifier.isStatic(mod)) throw new IllegalArgumentException(attribute + " is static!");
 
-				if (!Modifier.isFinal(mod)) {
-					LOGGER.log(Level.WARNING, "{} is not final! Method overriding is *not* supported by the LocalEventManger", attribute);
-				}
 				consumers.add((manager, object, key) -> manager.register(types[0], attribute, object, events.value(), key));
 				for (Class<?> sub : events.subs()) {
 					consumers.add((manager, object, key) -> manager.register(sub, attribute, object, events.value(), key));

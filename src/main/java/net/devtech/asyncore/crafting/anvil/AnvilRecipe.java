@@ -8,7 +8,6 @@ public interface AnvilRecipe {
 	 * offer the output of the recipe, or null if it's invalid
 	 * @param player the player crafting the recipe
 	 * @param inputs do not mutate this in any way if the recipe is not valid
-	 * @return
 	 */
 	AnvilResult offer(Player player, ItemStack[] inputs);
 

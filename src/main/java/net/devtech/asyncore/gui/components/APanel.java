@@ -15,9 +15,9 @@ import java.util.function.BiPredicate;
  * a compound of components, can paint multiple components
  */
 public class APanel implements AComponent {
-	private final List<AComponent> components = new ArrayList<>();
-	private final List<Point> locations = new ArrayList<>();
-	private final Size2i size;
+	protected final List<AComponent> components = new ArrayList<>();
+	protected final List<Point> locations = new ArrayList<>();
+	protected final Size2i size;
 
 	public APanel(Size2i size2i) {
 		this.size = size2i;

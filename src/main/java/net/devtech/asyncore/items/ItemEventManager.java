@@ -46,6 +46,7 @@ public class ItemEventManager {
 				if (predicate.test(item)) {
 					executor.accept((I) item, event);
 				}
+				CustomItemFactory.save(this.registry, item, converted);
 			}
 		}, this.plugin, ignoreCancelled);
 	}

@@ -88,7 +88,7 @@ public class CustomBlockDataChunk extends AbstractDataChunk<Object> {
 	@Writer (9072059811478052715L)
 	protected final void writer(PersistentOutput output) throws IOException {
 		output.writeInt(this.data.size());
-		for (Short2ObjectMap.Entry<Object> entry : Short2ObjectMaps.fastIterable(this.data)) {
+		for (Short2ObjectMap.Entry<Object> entry : this.data.short2ObjectEntrySet()) {
 			output.writeShort(entry.getShortKey());
 			output.writePersistent(entry.getValue());
 		}

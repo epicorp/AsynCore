@@ -1,6 +1,7 @@
 package net.devtech.asyncore.testing;
 
 import net.devtech.asyncore.AsynCore;
+import net.devtech.asyncore.blocks.AbstractBlock;
 import net.devtech.asyncore.blocks.events.DestroyEvent;
 import net.devtech.asyncore.blocks.events.PlaceEvent;
 import net.devtech.asyncore.blocks.events.TickEvent;
@@ -25,10 +26,14 @@ import org.bukkit.inventory.ItemStack;
 import java.awt.Point;
 import java.io.IOException;
 
-public class TestBlock extends BlockItem {
+public class TestBlock extends AbstractBlock implements BlockItem {
+	// the icon for a "filled" slot in the status bar
 	private static final ItemStack FILL = new ItemStack(Material.STONE);
+	// the icon for an "empty" slot in the status bar
 	private static final ItemStack EMPTY = new ItemStack(Material.GLASS);
+	// this is our display inventory, the "screen" for this block
 	private final Inventory display = Bukkit.createInventory(null, 27);
+	// some random info
 	int i;
 
 	public TestBlock(PersistentRegistry registry, ServerAccess<Object> access) {
@@ -42,7 +47,7 @@ public class TestBlock extends BlockItem {
 		return stack;
 	}
 
-	@LocalEvent
+	@LocalEvent // we have to listen to the place event to set a block at the location
 	private void place(PlaceEvent event) {
 		System.out.println("placed!");
 		event.getBlock().setType(Material.STONE);
@@ -60,15 +65,15 @@ public class TestBlock extends BlockItem {
 	}
 
 
-	@LocalEvent
-	private void fukkit_destroy(DestroyEvent event) {
+	@LocalEvent(4) // events can have priorities too
+	private void destroy(DestroyEvent event) {
 		System.out.println("destroy!");
 	}
 
 	@LocalEvent
-	private void fukkit_tick(TickEvent event) {
-		AsynCore.guiManager.redraw(this.display);
-		this.i = (this.i + 1) % 100;
+	private void tick(TickEvent event) {
+		this.i = (this.i + 1) % 100; // loop i from 0 -> 100
+		AsynCore.guiManager.redraw(this.display); // redraw the display every time i is updated
 	}
 
 	@Reader (2341234556789L)
